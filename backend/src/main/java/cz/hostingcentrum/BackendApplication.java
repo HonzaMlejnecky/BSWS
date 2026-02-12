@@ -1,4 +1,4 @@
-package cz.upce.bsws.hostingcentrum;
+package cz.hostingcentrum;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,10 +14,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *   - model/      - Entity a DTO
  *   - config/     - Konfigurace (Security, CORS, ...)
  */
-@SpringBootApplication
-public class HostingCentrumApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(HostingCentrumApplication.class, args);
-    }
+@SpringBootApplication
+public class BackendApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(BackendApplication.class, args);
+	}
+
 }
