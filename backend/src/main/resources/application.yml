@@ -1,0 +1,66 @@
+# ==============================================================================
+# HOSTING CENTRUM - Spring Boot konfigurace
+#
+# TYM BACKEND: Upravte podle potreby.
+# Hesla a citlive udaje cteme z ENV promennych (viz docker-compose.yml)
+# ==============================================================================
+
+spring:
+  application:
+    name: hosting-centrum
+
+  # --- Databaze ---
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mariadb://localhost:3306/hosting_platform}
+    username: ${SPRING_DATASOURCE_USERNAME:platform_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:platformpass123}
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  # --- JPA / Hibernate ---
+  jpa:
+    hibernate:
+      ddl-auto: none      # TYM DB: Pouzivame SQL migrace, ne auto-generovani
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MariaDBDialect
+
+  # --- Mail (Mailpit pro vyvoj) ---
+  mail:
+    host: ${MAIL_HOST:mail}
+    port: ${MAIL_PORT:1025}
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+# --- Server ---
+server:
+  port: 8080
+
+# --- Actuator (health checks) ---
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# --- Logging ---
+logging:
+  level:
+    root: INFO
+    cz.upce.bsws: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: WARN
+
+# --- Custom properties ---
+app:
+  customers-path: ${CUSTOMERS_PATH:/srv/customers}

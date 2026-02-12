@@ -1,0 +1,216 @@
+##############################################################################
+# HOSTINGOVE CENTRUM BSWS - Docker Compose
+#
+# Orchestrace vsech sluzeb hostingove platformy.
+#
+# Architektura:
+#   Prohlizec → Apache (:80) → Spring Boot (:8080) → MariaDB (:3306)
+#                   |
+#                   +→ Zakaznicke weby z /srv/customers/{user}/www
+#
+#   FTP (:21) → /srv/customers/{user}/
+#   Mailpit (:8025 web, :1025 SMTP)
+#
+# Spusteni:       docker-compose up -d --build
+# Zastaveni:      docker-compose down
+# Reset DB:       docker-compose down -v && docker-compose up -d --build
+# Logy:           docker-compose logs -f
+# Logy sluzby:    docker-compose logs -f backend
+##############################################################################
+
+services:
+
+  # ==========================================================================
+  # APACHE HTTP SERVER (Reverse Proxy + Static Sites)
+  #
+  # Zodpovednost: TYM WEBSERVER
+  # Konfigurace:  web/apache-config/
+  # Dokumentace:  docs/UKOLY-WEBSERVER.md
+  # ==========================================================================
+  web:
+    image: httpd:2.4-alpine
+    container_name: hc-web
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      # Apache konfigurace
+      - ./web/apache-config/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
+      - ./web/apache-config/vhosts.conf:/usr/local/apache2/conf/extra/vhosts.conf:ro
+      # Zakaznicke weby - Apache servuje staticky obsah
+      - ./customers:/srv/customers:ro
+    ports:
+      - "${WEB_PORT:-80}:80"
+    networks:
+      - hosting-net
+    healthcheck:
+      test: ["CMD", "httpd", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # SPRING BOOT BACKEND (API + Business Logic)
+  #
+  # Zodpovednost: TYM BACKEND
+  # Zdrojaky:     backend/
+  # Dokumentace:  docs/UKOLY-BACKEND.md
+  # ==========================================================================
+  backend:
+    build: ./backend
+    container_name: hc-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Spring profil
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+
+      # Databaze - platformova
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/${DB_NAME:-hosting_platform}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-platform_user}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-platformpass123}
+
+      # Databaze - root pristup pro vytvareni zakaznickych DB
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass123}
+
+      # Cesty
+      CUSTOMERS_PATH: /srv/customers
+    volumes:
+      # Zakaznicke slozky - backend vytvari pri aktivaci hostingu
+      - ./customers:/srv/customers
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    networks:
+      - hosting-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ==========================================================================
+  # MARIADB (Databaze)
+  #
+  # Zodpovednost: TYM DATABAZE
+  # Init skripty: db/init/
+  # Dokumentace:  docs/UKOLY-DATABAZE.md
+  #
+  # POZOR: Obsahuje DVE urovne databazi:
+  #   1. hosting_platform - systemova DB (users, orders, ...)
+  #   2. cust_* - zakaznicke DB (WordPress, eshopy, ...)
+  # ==========================================================================
+  db:
+    image: mariadb:11
+    container_name: hc-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass123}
+      MYSQL_DATABASE: ${DB_NAME:-hosting_platform}
+      MYSQL_USER: ${DB_USER:-platform_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-platformpass123}
+    volumes:
+      # Perzistentni data
+      - db_data:/var/lib/mysql
+      # Init skripty (spusti se pri prvnim startu)
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${DB_PORT:-3307}:3306"   # Externi port konfigurovatelny v .env
+    networks:
+      - hosting-net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ==========================================================================
+  # FTP SERVER (Pure-FTPd s MySQL auth)
+  #
+  # Zodpovednost: TYM FTP
+  # Konfigurace:  ftp/
+  # Dokumentace:  docs/UKOLY-FTP.md
+  #
+  # >>> ZAKOMENTOVANO - odkomentuj az bude pripraveno <<<
+  # ==========================================================================
+  # ftp:
+  #   image: stilliard/pure-ftpd:latest
+  #   container_name: hc-ftp
+  #   restart: unless-stopped
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   environment:
+  #     PUBLICHOST: "localhost"
+  #     FTP_PASSIVE_PORTS: "30000:30009"
+  #     # MySQL auth - Pure-FTPd cte uzivatele z DB
+  #     # Konfigurace viz ftp/pureftpd-mysql.conf
+  #   volumes:
+  #     - ./customers:/srv/customers
+  #     - ./ftp/pureftpd-mysql.conf:/etc/pure-ftpd/db/mysql.conf:ro
+  #   ports:
+  #     - "21:21"
+  #     - "30000-30009:30000-30009"
+  #   networks:
+  #     - hosting-net
+
+  # ==========================================================================
+  # MAIL SERVER (Mailpit - testovaci SMTP)
+  #
+  # Zodpovednost: TYM MAIL
+  # Dokumentace:  docs/UKOLY-MAIL.md
+  #
+  # Mailpit = zachytava vsechny emaily a zobrazi je ve webovem rozhrani.
+  # Pro vyvoj/testovani - zadne emaily neodchazeji ven.
+  #
+  # >>> ZAKOMENTOVANO - odkomentuj az bude pripraveno <<<
+  # ==========================================================================
+  # mail:
+  #   image: axllent/mailpit:latest
+  #   container_name: hc-mail
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8025:8025"    # Webove rozhrani
+  #     - "1025:1025"    # SMTP port
+  #   networks:
+  #     - hosting-net
+
+  # ==========================================================================
+  # PHPMYADMIN (Volitelne - DB admin)
+  #
+  # Pro snazsi spravu databazi behem vyvoje.
+  # Pristup: http://localhost:8081
+  #
+  # >>> ZAKOMENTOVANO - odkomentuj pokud potrebujes <<<
+  # ==========================================================================
+  # phpmyadmin:
+  #   image: phpmyadmin:latest
+  #   container_name: hc-phpmyadmin
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     PMA_HOST: db
+  #     PMA_PORT: 3306
+  #   ports:
+  #     - "8081:80"
+  #   networks:
+  #     - hosting-net
+
+# ==============================================================================
+# NETWORKS
+# ==============================================================================
+networks:
+  hosting-net:
+    driver: bridge
+
+# ==============================================================================
+# VOLUMES
+# ==============================================================================
+volumes:
+  db_data:
+    name: hc-db-data
