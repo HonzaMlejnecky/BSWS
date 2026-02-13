@@ -76,6 +76,14 @@ services:
       # Databaze - root pristup pro vytvareni zakaznickych DB
       DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass123}
 
+      SPRING_MAIL_HOST: mailserver
+      SPRING_MAIL_PORT: 1025
+      SPRING_MAIL_USERNAME:
+      SPRING_MAIL_PASSWORD:
+      SPRING_MAIL_PROTOCOL: smtp
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: false
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: false
+
       # Cesty
       CUSTOMERS_PATH: /srv/customers
     volumes:
@@ -86,11 +94,11 @@ services:
     networks:
       - hosting-net
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 30s
 
   # ==========================================================================
   # MARIADB (Databaze)
@@ -169,15 +177,21 @@ services:
   #
   # >>> ZAKOMENTOVANO - odkomentuj az bude pripraveno <<<
   # ==========================================================================
-  # mail:
-  #   image: axllent/mailpit:latest
-  #   container_name: hc-mail
-  #   restart: unless-stopped
-  #   ports:
-  #     - "8025:8025"    # Webove rozhrani
-  #     - "1025:1025"    # SMTP port
-  #   networks:
-  #     - hosting-net
+  mailserver:
+    image: mailhog/mailhog
+    container_name: mailserver
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - hosting-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8025" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
 
   # ==========================================================================
   # PHPMYADMIN (Volitelne - DB admin)
@@ -187,19 +201,19 @@ services:
   #
   # >>> ZAKOMENTOVANO - odkomentuj pokud potrebujes <<<
   # ==========================================================================
-  # phpmyadmin:
-  #   image: phpmyadmin:latest
-  #   container_name: hc-phpmyadmin
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - db
-  #   environment:
-  #     PMA_HOST: db
-  #     PMA_PORT: 3306
-  #   ports:
-  #     - "8081:80"
-  #   networks:
-  #     - hosting-net
+  phpmyadmin:
+     image: phpmyadmin:latest
+     container_name: hc-phpmyadmin
+     restart: unless-stopped
+     depends_on:
+       - db
+     environment:
+       PMA_HOST: db
+       PMA_PORT: 3306
+     ports:
+       - "8081:80"
+     networks:
+       - hosting-net
 
 # ==============================================================================
 # NETWORKS
