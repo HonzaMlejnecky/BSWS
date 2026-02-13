@@ -36,6 +36,7 @@ help:
 	@echo "  DATABAZE:"
 	@echo "    make reset      - RESET DB (smaze data!) + restart"
 	@echo "    make db         - Pripojit se k DB (platform_user)"
+	@echo "    make init_db    - Inicializuji DB (DROP, CREATE, INSERT)"
 	@echo "    make db-root    - Pripojit se k DB (root)"
 	@echo "    make db-tables  - Zobrazit vsechny tabulky"
 	@echo "    make db-users   - Zobrazit uzivatele v DB"
@@ -103,8 +104,6 @@ logs:
 backend:
 	@echo "Rebuilduji backend..."
 	@docker compose up -d --build backend
-	@echo "Cekam na start (30s)..."
-	@sleep 30
 	@docker compose ps backend
 	@echo "Backend restartovan."
 
@@ -141,6 +140,14 @@ reset:
 # Pripojit k DB jako platform_user
 db:
 	@docker exec -it hc-db mariadb -u platform_user -pplatformpass123 hosting_platform
+
+# Drop/create schema a insert dat
+init_db:
+	@echo "Inicializuji schema a data..."
+	@docker exec -i hc-db mariadb -u platform_user -pplatformpass123 hosting_platform < db/init/03-drop.sql
+	@docker exec -i hc-db mariadb -u platform_user -pplatformpass123 hosting_platform < db/init/01-schema.sql
+	@docker exec -i hc-db mariadb -u platform_user -pplatformpass123 hosting_platform < db/init/02-seed.sql
+	@echo "Databaze inicializovana."
 
 # Pripojit k DB jako root
 db-root:

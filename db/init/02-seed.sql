@@ -23,11 +23,11 @@ INSERT INTO users (email, password_hash, username, first_name, last_name, role, 
 
 -- Testovaci zakaznici (heslo: test1234)
 INSERT INTO users (email, password_hash, username, first_name, last_name, company_name, phone, street, city, postal_code, role, is_verified) VALUES
-('jan.novak@mojefirma.cz', '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'jnovak', 'Jan', 'Novák', 'Moje Firma s.r.o.', '+420 777 111 222', 'Hlavní 123', 'Praha', '110 00', 'customer', TRUE),
-('petra.svobodova@druhafirma.cz', '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'psvobodova', 'Petra', 'Svobodová', 'Druhá Firma a.s.', '+420 777 333 444', 'Vedlejší 456', 'Brno', '602 00', 'customer', TRUE),
-('karel.dvorak@tretifirma.cz', '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'kdvorak', 'Karel', 'Dvořák', 'Třetí Firma s.r.o.', '+420 777 555 666', 'Boční 789', 'Ostrava', '702 00', 'customer', TRUE),
-('eva.malikova@email.cz', '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'emalikova', 'Eva', 'Malíková', NULL, '+420 777 777 888', 'Malá 10', 'Plzeň', '301 00', 'customer', FALSE),
-('tomas.cerny@firma.cz', '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'tcerny', 'Tomáš', 'Černý', 'Černý & syn', '+420 777 999 000', 'Dlouhá 55', 'Liberec', '460 01', 'customer', TRUE);
+('jan.novak@mojefirma.cz', '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'jnovak', 'Jan', 'Novák', 'Moje Firma s.r.o.', '+420 777 111 222', 'Hlavní 123', 'Praha', '110 00', 'USER', TRUE),
+('petra.svobodova@druhafirma.cz', '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'psvobodova', 'Petra', 'Svobodová', 'Druhá Firma a.s.', '+420 777 333 444', 'Vedlejší 456', 'Brno', '602 00', 'USER', TRUE),
+('karel.dvorak@tretifirma.cz', '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'kdvorak', 'Karel', 'Dvořák', 'Třetí Firma s.r.o.', '+420 777 555 666', 'Boční 789', 'Ostrava', '702 00', 'USER', TRUE),
+('eva.malikova@email.cz', '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'emalikova', 'Eva', 'Malíková', NULL, '+420 777 777 888', 'Malá 10', 'Plzeň', '301 00', 'USER', FALSE),
+('tomas.cerny@firma.cz', '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'tcerny', 'Tomáš', 'Černý', 'Černý & syn', '+420 777 999 000', 'Dlouhá 55', 'Liberec', '460 01', 'USER', TRUE);
 
 -- =============================================================================
 -- HOSTINGOVE PLANY

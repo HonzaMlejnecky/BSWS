@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY,
     email           VARCHAR(255) NOT NULL UNIQUE,
     password_hash   VARCHAR(255) NOT NULL,
-    username        VARCHAR(100) NOT NULL UNIQUE,
+    username        VARCHAR(100),
     first_name      VARCHAR(100),
     last_name       VARCHAR(100),
     phone           VARCHAR(20),
@@ -30,7 +30,9 @@ CREATE TABLE IF NOT EXISTS users (
     postal_code     VARCHAR(20),
     country         VARCHAR(100) DEFAULT 'CZ',
     -- Stav
-    role            ENUM('customer', 'admin') DEFAULT 'customer',
+    role            ENUM('USER', 'ADMIN') DEFAULT 'USER',
+    code            VARCHAR(250) DEFAULT NULL,
+
     is_active       BOOLEAN DEFAULT TRUE,
     is_verified     BOOLEAN DEFAULT FALSE,
     -- Timestamps
