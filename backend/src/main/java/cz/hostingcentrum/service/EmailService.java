@@ -18,6 +18,7 @@ public class EmailService {
     public void setupMail(String sender, String recipient, String subject, String text, File attachment) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        helper.setFrom("noreply@hostingcentrum.cz");
 
         System.out.println(sender);
         if (sender != null) {

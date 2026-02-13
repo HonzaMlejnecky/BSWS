@@ -50,8 +50,8 @@ public class UserService {
         User user = new User();
         user.setRole(Role.USER);
         user.setEmail(auth.getEmail());
-        user.setDateRegister(LocalDate.now());
-        user.setPassword(encoder.encode(auth.getPassword()));
+        user.setCreatedAt(LocalDate.now());
+        user.setPasswordHash(encoder.encode(auth.getPassword()));
         user.setCode(encryptedKeyService.encrypt(encryptedKeyService.generateActivationCode() + ""));
         emailService.registationMail(user.getEmail(), user.getCode());
         userRepo.save(user);

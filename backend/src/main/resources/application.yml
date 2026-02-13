@@ -27,11 +27,13 @@ spring:
         dialect: org.hibernate.dialect.MariaDBDialect
 
   # --- Mail (Mailpit pro vyvoj) ---
+
   mail:
-    host: ${MAIL_HOST:mail}
-    port: ${MAIL_PORT:1025}
+    host: mailserver
+    port: 1025
     username: ""
     password: ""
+    protocol: smtp
     properties:
       mail:
         smtp:

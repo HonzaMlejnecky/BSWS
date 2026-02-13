@@ -69,7 +69,7 @@ public class AuthController {
         System.out.println(email + " " + code + isVerified);
         if (isVerified) {
             HttpHeaders headers = new HttpHeaders();
-            headers.setLocation(URI.create("http://localhost:5173/login"));
+            headers.setLocation(URI.create("http://localhost/login"));
             return new ResponseEntity<>(headers, HttpStatus.FOUND);
         } else {
             return ResponseEntity.badRequest().body("Invalid verification code or email.");
