@@ -34,7 +34,7 @@ function App() {
         initialLoginMode={modalMode} 
       />
 
-      <div className={`min-h-screen bg-white flex flex-col ${isModalOpen ? 'blur-sm' : ''}`}>
+      <div className={`min-h-screen bg-white flex flex-col`}>
         
         <Navbar onOpenModal={() => openModal(true)} />
         
