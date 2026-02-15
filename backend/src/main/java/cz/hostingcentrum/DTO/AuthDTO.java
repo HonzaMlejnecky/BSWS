@@ -1,6 +1,5 @@
 package cz.hostingcentrum.DTO;
 
-import cz.hostingcentrum.Enum.Role;
 import lombok.Data;
 
 @Data

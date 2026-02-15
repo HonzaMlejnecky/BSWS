@@ -2,7 +2,17 @@
 
 Semestralni prace — hostingove centrum postavene na Dockeru.
 
-> **Novy v projektu?** Zacni s [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) - kompletni navod krok za krokem.
+---
+
+## Zacni zde
+
+| Jsem... | Precti si |
+|---------|-----------|
+| **Novy v projektu** | [docs/JAK-PRACOVAT.md](docs/JAK-PRACOVAT.md) |
+| **Chci vedet co je hotovo** | [docs/ZADANI-STAV.md](docs/ZADANI-STAV.md) |
+| **Pracuji s databazi** | [docs/PRACE-S-DATABAZI.md](docs/PRACE-S-DATABAZI.md) |
+
+---
 
 ## Rychly start
 
@@ -111,10 +121,18 @@ DB_PORT=3308         # misto 3307
 
 ## Dokumentace
 
+### Jak pracovat s projektem
 | Dokument | Popis |
 |----------|-------|
-| [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) | Kompletni navod pro zacatecniky |
-| [docs/ROZDELENI-PRACE.md](docs/ROZDELENI-PRACE.md) | Kdo co dela (8 lidi) |
+| [docs/JAK-PRACOVAT.md](docs/JAK-PRACOVAT.md) | **Blbuvzdorny navod pro vsechny** |
+| [docs/PRACE-S-DATABAZI.md](docs/PRACE-S-DATABAZI.md) | Flyway migrace, backup, reseni problemu |
+| [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) | Detailni technicka dokumentace |
+
+### Stav projektu a ukoly
+| Dokument | Popis |
+|----------|-------|
+| [docs/ZADANI-STAV.md](docs/ZADANI-STAV.md) | **Co je hotovo a co zbyva** |
+| [docs/ROZDELENI-PRACE.md](docs/ROZDELENI-PRACE.md) | Kdo co dela |
 | [docs/UKOLY-BACKEND.md](docs/UKOLY-BACKEND.md) | Ukoly pro tym Backend |
 | [docs/UKOLY-FRONTEND.md](docs/UKOLY-FRONTEND.md) | Ukoly pro tym Frontend |
 | [docs/UKOLY-DATABAZE.md](docs/UKOLY-DATABAZE.md) | Ukoly pro tym Databaze |

@@ -1,15 +1,15 @@
 # ==============================================================================
-# HOSTING CENTRUM - Spring Boot konfigurace
+# HOSTING CENTRUM - Spring Boot Configuration
 #
-# TYM BACKEND: Upravte podle potreby.
-# Hesla a citlive udaje cteme z ENV promennych (viz docker-compose.yml)
+# BACKEND TEAM: Modify as needed.
+# Passwords and sensitive data are read from ENV variables (see docker-compose.yml)
 # ==============================================================================
 
 spring:
   application:
     name: hosting-centrum
 
-  # --- Databaze ---
+  # --- Database ---
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mariadb://localhost:3306/hosting_platform}
     username: ${SPRING_DATASOURCE_USERNAME:platform_user}
@@ -19,15 +19,22 @@ spring:
   # --- JPA / Hibernate ---
   jpa:
     hibernate:
-      ddl-auto: none      # TYM DB: Pouzivame SQL migrace, ne auto-generovani
+      ddl-auto: none      # Flyway manages schema
     show-sql: false
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MariaDBDialect
 
-  # --- Mail (Mailpit pro vyvoj) ---
+  # --- Flyway (DB migrations) ---
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: true
 
+  # --- Mail (Mailpit for development) ---
   mail:
     host: mailserver
     port: 1025
@@ -55,13 +62,14 @@ management:
     health:
       show-details: when-authorized
 
-# --- Logging ---
+# --- Logging (SLF4J + Logback) ---
 logging:
   level:
     root: INFO
-    cz.upce.bsws: DEBUG
+    cz.hostingcentrum: DEBUG
     org.springframework.security: INFO
     org.hibernate.SQL: WARN
+    org.flywaydb: INFO
 
 # --- Custom properties ---
 app:

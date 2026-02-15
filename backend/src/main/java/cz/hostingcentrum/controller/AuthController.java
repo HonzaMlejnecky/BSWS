@@ -6,6 +6,8 @@ import cz.hostingcentrum.model.User;
 import cz.hostingcentrum.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,54 +21,62 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private final UserService userService;
 
     @PostMapping("/login")
     @Operation(
-            summary = "Přihlášení uživatele",
-            description = "Během příhlášení dojde k ověření, jestli zadané údaje odpovídají a jestli uživatel v systému existuje. Po dokončení ověření se vrátí JWT token."
+            summary = "User login",
+            description = "Authenticates user credentials and returns a JWT token if valid."
     )
     public ResponseEntity<?> login(@RequestBody AuthDTO authDTO) {
+        log.debug("Login attempt for email: {}", authDTO.getEmail());
         Optional<User> user = userService.findByEmail(authDTO.getEmail());
         if(user.isPresent() && user.get().getCode() != null) {
+            log.warn("Login failed - email not verified: {}", authDTO.getEmail());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("First verified your email");
         }
         String token = userService.verify(authDTO);
         if (token != null) {
+            log.info("Login successful for email: {}", authDTO.getEmail());
             return ResponseEntity.ok(token);
         } else {
+            log.warn("Login failed - invalid credentials: {}", authDTO.getEmail());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
     }
 
     @PostMapping("/register")
     @Operation(
-            summary = "Registrace nového uživatele",
-            description = "Vytvoří nového uživatele, pošle verifikační email a uloží do DB"
+            summary = "Register new user",
+            description = "Creates a new user account, sends verification email and saves to database."
     )
     public ResponseEntity<?> register(@RequestBody AuthDTO authDto) {
+        log.debug("Registration attempt for email: {}", authDto.getEmail());
         Optional<User> existingUser = userService.findByEmail(authDto.getEmail());
 
         if (existingUser.isPresent()) {
             User user = existingUser.get();
             authDto.setRole(user.getRole().name());
             userService.register(authDto);
-            return ResponseEntity.ok("Účet byl úspěšně dokončen. Zkontrolujte email pro ověření.");
-        }else{
+            log.info("User registration updated for existing email: {}", authDto.getEmail());
+            return ResponseEntity.ok("Account created successfully. Please check your email for verification.");
+        } else {
             authDto.setRole(String.valueOf(Role.USER));
             userService.register(authDto);
-            return ResponseEntity.ok("Účet byl úspěšně dokončen. Zkontrolujte email pro ověření.");
+            log.info("New user registered: {}", authDto.getEmail());
+            return ResponseEntity.ok("Account created successfully. Please check your email for verification.");
         }
     }
 
     @GetMapping("/verify/email")
     @Operation(
-            summary = "Ověření emailu po registraci",
-            description = "Po dokončení registrace klient dostane na svůj email ověřovací odkaz a po rozkliknutí dojde k ověření emailu a přesměrování a stránku Login"
+            summary = "Email verification",
+            description = "Verifies user email after registration and redirects to login page."
     )
     public ResponseEntity<?> verifyEmail(@RequestParam("code") String code, @RequestParam("email") String email) {
         boolean isVerified = userService.verifyEmail(email, code);
-        System.out.println(email + " " + code + isVerified);
+        log.debug("Email verification attempt: email={}, verified={}", email, isVerified);
         if (isVerified) {
             HttpHeaders headers = new HttpHeaders();
             headers.setLocation(URI.create("http://localhost/login"));

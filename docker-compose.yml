@@ -1,21 +1,21 @@
 ##############################################################################
-# HOSTINGOVE CENTRUM BSWS - Docker Compose
+# HOSTING CENTRUM BSWS - Docker Compose
 #
-# Orchestrace vsech sluzeb hostingove platformy.
+# Orchestration of all hosting platform services.
 #
-# Architektura:
-#   Prohlizec → Apache (:80) → Spring Boot (:8080) → MariaDB (:3306)
+# Architecture:
+#   Browser → Apache (:80) → Spring Boot (:8080) → MariaDB (:3306)
 #                   |
-#                   +→ Zakaznicke weby z /srv/customers/{user}/www
+#                   +→ Customer websites from /srv/customers/{user}/www
 #
 #   FTP (:21) → /srv/customers/{user}/
 #   Mailpit (:8025 web, :1025 SMTP)
 #
-# Spusteni:       docker-compose up -d --build
-# Zastaveni:      docker-compose down
+# Start:          docker-compose up -d --build
+# Stop:           docker-compose down
 # Reset DB:       docker-compose down -v && docker-compose up -d --build
-# Logy:           docker-compose logs -f
-# Logy sluzby:    docker-compose logs -f backend
+# Logs:           docker-compose logs -f
+# Service logs:   docker-compose logs -f backend
 ##############################################################################
 
 services:
@@ -23,9 +23,9 @@ services:
   # ==========================================================================
   # APACHE HTTP SERVER (Reverse Proxy + Static Sites)
   #
-  # Zodpovednost: TYM WEBSERVER
-  # Konfigurace:  web/apache-config/
-  # Dokumentace:  docs/UKOLY-WEBSERVER.md
+  # Responsibility: WEBSERVER TEAM
+  # Configuration:  web/apache-config/
+  # Documentation:  docs/UKOLY-WEBSERVER.md
   # ==========================================================================
   web:
     image: httpd:2.4-alpine
@@ -35,10 +35,10 @@ services:
       backend:
         condition: service_healthy
     volumes:
-      # Apache konfigurace
+      # Apache configuration
       - ./web/apache-config/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
       - ./web/apache-config/vhosts.conf:/usr/local/apache2/conf/extra/vhosts.conf:ro
-      # Zakaznicke weby - Apache servuje staticky obsah
+      # Customer websites - Apache serves static content
       - ./customers:/srv/customers:ro
     ports:
       - "${WEB_PORT:-80}:80"
@@ -53,9 +53,9 @@ services:
   # ==========================================================================
   # SPRING BOOT BACKEND (API + Business Logic)
   #
-  # Zodpovednost: TYM BACKEND
-  # Zdrojaky:     backend/
-  # Dokumentace:  docs/UKOLY-BACKEND.md
+  # Responsibility: BACKEND TEAM
+  # Sources:        backend/
+  # Documentation:  docs/UKOLY-BACKEND.md
   # ==========================================================================
   backend:
     build: ./backend
@@ -65,15 +65,15 @@ services:
       db:
         condition: service_healthy
     environment:
-      # Spring profil
+      # Spring profile
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
 
-      # Databaze - platformova
+      # Database - platform
       SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/${DB_NAME:-hosting_platform}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-platform_user}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-platformpass123}
 
-      # Databaze - root pristup pro vytvareni zakaznickych DB
+      # Database - root access for creating customer databases
       DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass123}
 
       SPRING_MAIL_HOST: mailserver
@@ -84,10 +84,10 @@ services:
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: false
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: false
 
-      # Cesty
+      # Paths
       CUSTOMERS_PATH: /srv/customers
     volumes:
-      # Zakaznicke slozky - backend vytvari pri aktivaci hostingu
+      # Customer folders - backend creates them when hosting is activated
       - ./customers:/srv/customers
     ports:
       - "${BACKEND_PORT:-8080}:8080"
@@ -101,15 +101,15 @@ services:
       start_period: 30s
 
   # ==========================================================================
-  # MARIADB (Databaze)
+  # MARIADB (Database)
   #
-  # Zodpovednost: TYM DATABAZE
-  # Init skripty: db/init/
-  # Dokumentace:  docs/UKOLY-DATABAZE.md
+  # Responsibility: DATABASE TEAM
+  # Init scripts:   db/init/
+  # Documentation:  docs/UKOLY-DATABAZE.md
   #
-  # POZOR: Obsahuje DVE urovne databazi:
-  #   1. hosting_platform - systemova DB (users, orders, ...)
-  #   2. cust_* - zakaznicke DB (WordPress, eshopy, ...)
+  # NOTE: Contains TWO levels of databases:
+  #   1. hosting_platform - system DB (users, orders, ...)
+  #   2. cust_* - customer DBs (WordPress, e-shops, ...)
   # ==========================================================================
   db:
     image: mariadb:11
@@ -121,12 +121,13 @@ services:
       MYSQL_USER: ${DB_USER:-platform_user}
       MYSQL_PASSWORD: ${DB_PASSWORD:-platformpass123}
     volumes:
-      # Perzistentni data
+      # Persistent data
       - db_data:/var/lib/mysql
-      # Init skripty (spusti se pri prvnim startu)
-      - ./db/init:/docker-entrypoint-initdb.d:ro
+      # NOTE: Init scripts are now managed by Flyway in backend
+      # Kept for compatibility with old installations
+      # - ./db/init:/docker-entrypoint-initdb.d:ro
     ports:
-      - "${DB_PORT:-3307}:3306"   # Externi port konfigurovatelny v .env
+      - "${DB_PORT:-3307}:3306"   # External port configurable in .env
     networks:
       - hosting-net
     healthcheck:
@@ -137,45 +138,40 @@ services:
       start_period: 30s
 
   # ==========================================================================
-  # FTP SERVER (Pure-FTPd s MySQL auth)
+  # FTP SERVER (Pure-FTPd)
   #
-  # Zodpovednost: TYM FTP
-  # Konfigurace:  ftp/
-  # Dokumentace:  docs/UKOLY-FTP.md
-  #
-  # >>> ZAKOMENTOVANO - odkomentuj az bude pripraveno <<<
+  # Responsibility: FTP TEAM
+  # Configuration:  ftp/
+  # Documentation:  docs/UKOLY-FTP.md
   # ==========================================================================
-  # ftp:
-  #   image: stilliard/pure-ftpd:latest
-  #   container_name: hc-ftp
-  #   restart: unless-stopped
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   environment:
-  #     PUBLICHOST: "localhost"
-  #     FTP_PASSIVE_PORTS: "30000:30009"
-  #     # MySQL auth - Pure-FTPd cte uzivatele z DB
-  #     # Konfigurace viz ftp/pureftpd-mysql.conf
-  #   volumes:
-  #     - ./customers:/srv/customers
-  #     - ./ftp/pureftpd-mysql.conf:/etc/pure-ftpd/db/mysql.conf:ro
-  #   ports:
-  #     - "21:21"
-  #     - "30000-30009:30000-30009"
-  #   networks:
-  #     - hosting-net
+  ftp:
+    image: stilliard/pure-ftpd:latest
+    container_name: hc-ftp
+    restart: unless-stopped
+    environment:
+      PUBLICHOST: "localhost"
+      FTP_USER_NAME: "ftpuser"
+      FTP_USER_PASS: "ftppass123"
+      FTP_USER_HOME: "/srv/customers"
+      FTP_PASSIVE_PORTS: "30000:30009"
+    volumes:
+      - ./customers:/srv/customers
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+    networks:
+      - hosting-net
 
   # ==========================================================================
-  # MAIL SERVER (Mailpit - testovaci SMTP)
+  # MAIL SERVER (Mailpit - test SMTP)
   #
-  # Zodpovednost: TYM MAIL
-  # Dokumentace:  docs/UKOLY-MAIL.md
+  # Responsibility: MAIL TEAM
+  # Documentation:  docs/UKOLY-MAIL.md
   #
-  # Mailpit = zachytava vsechny emaily a zobrazi je ve webovem rozhrani.
-  # Pro vyvoj/testovani - zadne emaily neodchazeji ven.
+  # Mailpit = captures all emails and displays them in web interface.
+  # For development/testing - no emails leave the system.
   #
-  # >>> ZAKOMENTOVANO - odkomentuj az bude pripraveno <<<
+  # >>> COMMENTED OUT - uncomment when ready <<<
   # ==========================================================================
   mailserver:
     image: mailhog/mailhog
@@ -194,12 +190,12 @@ services:
 
 
   # ==========================================================================
-  # PHPMYADMIN (Volitelne - DB admin)
+  # PHPMYADMIN (Optional - DB admin)
   #
-  # Pro snazsi spravu databazi behem vyvoje.
-  # Pristup: http://localhost:8081
+  # For easier database management during development.
+  # Access: http://localhost:8081
   #
-  # >>> ZAKOMENTOVANO - odkomentuj pokud potrebujes <<<
+  # >>> COMMENTED OUT - uncomment if needed <<<
   # ==========================================================================
   phpmyadmin:
      image: phpmyadmin:latest

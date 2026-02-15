@@ -1,5 +1,7 @@
 package cz.hostingcentrum.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
@@ -10,6 +12,7 @@ import java.util.Random;
 
 @Service
 public class EncryptedKeyService {
+    private static final Logger log = LoggerFactory.getLogger(EncryptedKeyService.class);
     private static final String ALGORITHM = "AES";
     private static final byte[] STATIC_KEY = "gH3kLmZ9sQwXvB7rYpCdJ2tN6F0A5T8U".getBytes();
     private static final SecretKey secretKey = new SecretKeySpec(STATIC_KEY, ALGORITHM);
@@ -21,7 +24,7 @@ public class EncryptedKeyService {
             byte[] encrypted = cipher.doFinal(strToEncrypt.getBytes());
             return Base64.getUrlEncoder().encodeToString(encrypted);
         } catch (Exception e) {
-            System.out.println("Error while encrypting: " + e.toString());
+            log.error("Error while encrypting: {}", e.getMessage());
         }
         return null;
     }
@@ -33,7 +36,7 @@ public class EncryptedKeyService {
             byte[] decrypted = cipher.doFinal(Base64.getUrlDecoder().decode(strToDecrypt));
             return new String(decrypted);
         } catch (Exception e) {
-            System.out.println("Error while decrypting: " + e.toString());
+            log.error("Error while decrypting: {}", e.getMessage());
         }
         return null;
     }

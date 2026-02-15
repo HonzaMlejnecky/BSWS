@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +21,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtFilter.class);
     private final JwtService jwtService;
 
     ApplicationContext context;
@@ -34,7 +37,7 @@ public class JwtFilter extends OncePerRequestFilter {
             try {
                 username = jwtService.extractUserName(token);
             } catch (io.jsonwebtoken.security.SignatureException e) {
-                System.out.println("Neplatný podpis JWT: {} " + e.getMessage());
+                log.warn("Invalid JWT signature: {}", e.getMessage());
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }

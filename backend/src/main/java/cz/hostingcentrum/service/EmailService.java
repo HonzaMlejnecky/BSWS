@@ -3,6 +3,8 @@ package cz.hostingcentrum.service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,7 @@ import java.io.File;
 @RequiredArgsConstructor
 public class EmailService {
 
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
     private final JavaMailSender mailSender;
 
     public void setupMail(String sender, String recipient, String subject, String text, File attachment) throws MessagingException {
@@ -20,7 +23,7 @@ public class EmailService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         helper.setFrom("noreply@hostingcentrum.cz");
 
-        System.out.println(sender);
+        log.debug("Preparing email - sender: {}, recipient: {}, subject: {}", sender, recipient, subject);
         if (sender != null) {
             helper.setReplyTo(sender);
         }
@@ -33,36 +36,40 @@ public class EmailService {
 
         if (attachment != null) {
             helper.addAttachment(attachment.getName(), attachment);
+            log.debug("Attachment added: {}", attachment.getName());
         }
 
         mailSender.send(message);
+        log.debug("Email sent successfully to: {}", recipient);
     }
 
 
     public void registationMail(String email, String code) {
 
         String verificationUrl = String.format("http://localhost:8080/api/v1/auth/verify/email?code=%s&email=%s", code, email);
-        System.out.println(verificationUrl);
-        String subject = "Ověření e-mailové adresy pro dokončení registrace";
+        log.info("Sending verification email to {} with URL: {}", email, verificationUrl);
+        String subject = "Email Verification - Complete Your Registration";
 
         String text =
-                "<h2>Ověření e-mailové adresy</h2>" +
-                        "<p>Dobrý den,</p>" +
-                        "<p>děkujeme za registraci do naší webhostingové aplikace HostingCentrum.</p>" +
-                        "<p>Pro dokončení registrace a aktivaci vašeho účtu je nutné ověřit vaši e-mailovou adresu. " +
-                        "Tímto krokem zajistíme, že byla e-mailová adresa zadána správně a že jste jejím oprávněným vlastníkem.</p>" +
+                "<h2>Email Verification</h2>" +
+                        "<p>Hello,</p>" +
+                        "<p>Thank you for registering with HostingCentrum.</p>" +
+                        "<p>To complete your registration and activate your account, please verify your email address. " +
+                        "This ensures that the email address was entered correctly and that you are its rightful owner.</p>" +
                         String.format(
-                                "<p>Pro ověření klikněte na následující odkaz: " +
-                                        "<a href='%s'>Ověřit e-mailovou adresu</a></p>",
+                                "<p>Click the following link to verify: " +
+                                        "<a href='%s'>Verify Email Address</a></p>",
                                 verificationUrl
                         ) +
-                        "<p>Pokud jste se neregistrovali, můžete tento e-mail ignorovat.</p>" +
-                        "<p>S pozdravem,<br/>Tým HostingCentrum</p>";
+                        "<p>If you did not register, you can safely ignore this email.</p>" +
+                        "<p>Best regards,<br/>HostingCentrum Team</p>";
 
         try {
             setupMail(null, email,"\uD83D\uDD11" + subject, text, null);
+            log.info("Verification email sent successfully to: {}", email);
         } catch (MessagingException e) {
-            throw new RuntimeException(e);
+            log.error("Failed to send verification email to {}: {}", email, e.getMessage());
+            throw new RuntimeException("Failed to send verification email", e);
         }
     }
 
