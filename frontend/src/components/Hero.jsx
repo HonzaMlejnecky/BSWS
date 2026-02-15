@@ -28,7 +28,7 @@ const Hero = ({ onOpenModal }) => {
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-12 lg:gap-0">
           
-          <div className="text-center lg:text-left space-y-8 lg:pr-12 z-10 relative animate-text">
+          <div className="text-center lg:text-left space-y-8 lg:pr-12 z-10 relative animate-text order-last lg:order-first">
             <h1 className="text-4xl md:text-6xl font-bold text-[#004CAF] leading-tight">
               Vaše weby pod ochranou digitálního mága
             </h1>
@@ -50,8 +50,8 @@ const Hero = ({ onOpenModal }) => {
             </div>
           </div>
 
-          <div className="relative mt-12 lg:mt-0">
-            <div className="animate-image shadow-2xl bg-gray-100 rounded-l-[3rem] rounded-r-none overflow-hidden lg:w-[120%] lg:ml-[10%] relative z-0">
+          <div className="relative order-first lg:order-last mb-12 lg:mb-0 lg:mt-0">
+            <div className="animate-image shadow-2xl bg-gray-100 rounded-3xl lg:rounded-l-[3rem] lg:rounded-r-none overflow-hidden lg:w-[120%] lg:ml-[10%] relative z-0">
                 <img 
                   src={screenPng} 
                   alt="Ukázka aplikace Mage" 

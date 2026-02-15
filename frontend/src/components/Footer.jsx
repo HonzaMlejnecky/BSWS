@@ -28,7 +28,7 @@ const Footer = () => {
   return (
     <footer ref={footerRef} className="bg-[#004CAF] text-white pt-16 pb-8 w-full mt-auto relative font-sans">
       
-      <div className={`absolute bottom-full right-6 md:right-16 mb-[-24px] z-10 pointer-events-none transition-all duration-1000 ease-out transform
+      <div className={`hidden md:block absolute bottom-full right-6 md:right-16 mb-[-24px] z-10 pointer-events-none transition-all duration-1000 ease-out transform
           ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0'}
       `}>
          <img 
