@@ -1,34 +1,31 @@
 # Frontend
 
-**Zodpovednost:** TYM FRONTEND
+**Zodpovědnost:** TÝM FRONTEND
 
-Viz `docs/UKOLY-FRONTEND.md` pro detailni zadani.
+Viz `docs/UKOLY-FRONTEND.md` pro detailní zadání.
 
-## Technologie (k rozhodnuti)
+## Použité Technologie
 
-- **React** - SPA, jednodussi setup
-- **Next.js** - React s SSR, lepsi SEO
-- **Vue.js** - alternativa k Reactu
-- **Thymeleaf** - serverove renderovani primo ve Spring Boot
+- **React** - Hlavní UI knihovna.
+- **Tailwind CSS** - Styling, responzivita a vizuální efekty.
+- **React Router Dom** - Navigace (SPA routing).
+- **React Icons** - Ikony pro sekci Služby a Footer.
+- **Intersection Observer API** - Vlastní řešení pro scroll-reveal animace bez externích knihoven.
 
-## Setup
+## Setup a Spuštění
 
-TYM FRONTEND: Inicializujte projekt podle zvolene technologie.
+Projekt je inicializován pomocí Vite. Pro lokální spuštění postupujte následovně:
 
-### Priklad pro React (Vite):
+### 1. Instalace závislostí
 ```bash
-npm create vite@latest . -- --template react-ts
 npm install
-npm run dev
 ```
 
-### Priklad pro Next.js:
+### 2. Spuštění vývojového serveru
 ```bash
-npx create-next-app@latest . --typescript --tailwind --eslint
 npm run dev
 ```
 
 ## API Endpointy
-
 Backend bezi na `http://localhost:8080`.
 Viz dokumentace API (TYM BACKEND).
