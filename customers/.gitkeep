@@ -1,0 +1,3 @@
+# Tato slozka obsahuje data zakazniku (weby nahrane pres FTP).
+# Obsah slozek user_* je ignorovan v .gitignore.
+# Ukazkove soubory jsou v repozitari pro testovani.

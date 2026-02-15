@@ -1,0 +1,226 @@
+##############################################################################
+# HOSTING CENTRUM BSWS - Docker Compose
+#
+# Orchestration of all hosting platform services.
+#
+# Architecture:
+#   Browser → Apache (:80) → Spring Boot (:8080) → MariaDB (:3306)
+#                   |
+#                   +→ Customer websites from /srv/customers/{user}/www
+#
+#   FTP (:21) → /srv/customers/{user}/
+#   Mailpit (:8025 web, :1025 SMTP)
+#
+# Start:          docker-compose up -d --build
+# Stop:           docker-compose down
+# Reset DB:       docker-compose down -v && docker-compose up -d --build
+# Logs:           docker-compose logs -f
+# Service logs:   docker-compose logs -f backend
+##############################################################################
+
+services:
+
+  # ==========================================================================
+  # APACHE HTTP SERVER (Reverse Proxy + Static Sites)
+  #
+  # Responsibility: WEBSERVER TEAM
+  # Configuration:  web/apache-config/
+  # Documentation:  docs/UKOLY-WEBSERVER.md
+  # ==========================================================================
+  web:
+    image: httpd:2.4-alpine
+    container_name: hc-web
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      # Apache configuration
+      - ./web/apache-config/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
+      - ./web/apache-config/vhosts.conf:/usr/local/apache2/conf/extra/vhosts.conf:ro
+      # Customer websites - Apache serves static content
+      - ./customers:/srv/customers:ro
+    ports:
+      - "${WEB_PORT:-80}:80"
+    networks:
+      - hosting-net
+    healthcheck:
+      test: ["CMD", "httpd", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # SPRING BOOT BACKEND (API + Business Logic)
+  #
+  # Responsibility: BACKEND TEAM
+  # Sources:        backend/
+  # Documentation:  docs/UKOLY-BACKEND.md
+  # ==========================================================================
+  backend:
+    build: ./backend
+    container_name: hc-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Spring profile
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+
+      # Database - platform
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/${DB_NAME:-hosting_platform}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-platform_user}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-platformpass123}
+
+      # Database - root access for creating customer databases
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass123}
+
+      SPRING_MAIL_HOST: mailserver
+      SPRING_MAIL_PORT: 1025
+      SPRING_MAIL_USERNAME:
+      SPRING_MAIL_PASSWORD:
+      SPRING_MAIL_PROTOCOL: smtp
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: false
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: false
+
+      # Paths
+      CUSTOMERS_PATH: /srv/customers
+    volumes:
+      # Customer folders - backend creates them when hosting is activated
+      - ./customers:/srv/customers
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    networks:
+      - hosting-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ==========================================================================
+  # MARIADB (Database)
+  #
+  # Responsibility: DATABASE TEAM
+  # Init scripts:   db/init/
+  # Documentation:  docs/UKOLY-DATABAZE.md
+  #
+  # NOTE: Contains TWO levels of databases:
+  #   1. hosting_platform - system DB (users, orders, ...)
+  #   2. cust_* - customer DBs (WordPress, e-shops, ...)
+  # ==========================================================================
+  db:
+    image: mariadb:11
+    container_name: hc-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass123}
+      MYSQL_DATABASE: ${DB_NAME:-hosting_platform}
+      MYSQL_USER: ${DB_USER:-platform_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-platformpass123}
+    volumes:
+      # Persistent data
+      - db_data:/var/lib/mysql
+      # NOTE: Init scripts are now managed by Flyway in backend
+      # Kept for compatibility with old installations
+      # - ./db/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${DB_PORT:-3307}:3306"   # External port configurable in .env
+    networks:
+      - hosting-net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ==========================================================================
+  # FTP SERVER (Pure-FTPd)
+  #
+  # Responsibility: FTP TEAM
+  # Configuration:  ftp/
+  # Documentation:  docs/UKOLY-FTP.md
+  # ==========================================================================
+  ftp:
+    image: stilliard/pure-ftpd:latest
+    container_name: hc-ftp
+    restart: unless-stopped
+    environment:
+      PUBLICHOST: "localhost"
+      FTP_USER_NAME: "ftpuser"
+      FTP_USER_PASS: "ftppass123"
+      FTP_USER_HOME: "/srv/customers"
+      FTP_PASSIVE_PORTS: "30000:30009"
+    volumes:
+      - ./customers:/srv/customers
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+    networks:
+      - hosting-net
+
+  # ==========================================================================
+  # MAIL SERVER (Mailpit - test SMTP)
+  #
+  # Responsibility: MAIL TEAM
+  # Documentation:  docs/UKOLY-MAIL.md
+  #
+  # Mailpit = captures all emails and displays them in web interface.
+  # For development/testing - no emails leave the system.
+  #
+  # >>> COMMENTED OUT - uncomment when ready <<<
+  # ==========================================================================
+  mailserver:
+    image: mailhog/mailhog
+    container_name: mailserver
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - hosting-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8025" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+
+  # ==========================================================================
+  # PHPMYADMIN (Optional - DB admin)
+  #
+  # For easier database management during development.
+  # Access: http://localhost:8081
+  #
+  # >>> COMMENTED OUT - uncomment if needed <<<
+  # ==========================================================================
+  phpmyadmin:
+     image: phpmyadmin:latest
+     container_name: hc-phpmyadmin
+     restart: unless-stopped
+     depends_on:
+       - db
+     environment:
+       PMA_HOST: db
+       PMA_PORT: 3306
+     ports:
+       - "8081:80"
+     networks:
+       - hosting-net
+
+# ==============================================================================
+# NETWORKS
+# ==============================================================================
+networks:
+  hosting-net:
+    driver: bridge
+
+# ==============================================================================
+# VOLUMES
+# ==============================================================================
+volumes:
+  db_data:
+    name: hc-db-data
