@@ -1,4 +1,4 @@
-package cz.hostingcentrum.config;
+package cz.hostingcentrum.Config;
 
 
 import io.jsonwebtoken.Claims;

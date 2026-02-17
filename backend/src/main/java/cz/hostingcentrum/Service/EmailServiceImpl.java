@@ -1,5 +1,6 @@
-package cz.hostingcentrum.service;
+package cz.hostingcentrum.Service;
 
+import cz.hostingcentrum.Interface.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -13,11 +14,12 @@ import java.io.File;
 
 @Service
 @RequiredArgsConstructor
-public class EmailService {
+public class EmailServiceImpl implements EmailService {
 
-    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+    private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
     private final JavaMailSender mailSender;
 
+    @Override
     public void setupMail(String sender, String recipient, String subject, String text, File attachment) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -44,6 +46,7 @@ public class EmailService {
     }
 
 
+    @Override
     public void registationMail(String email, String code) {
 
         String verificationUrl = String.format("http://localhost:8080/api/v1/auth/verify/email?code=%s&email=%s", code, email);

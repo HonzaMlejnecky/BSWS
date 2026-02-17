@@ -1,4 +1,4 @@
-package cz.hostingcentrum.config;
+package cz.hostingcentrum.Config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

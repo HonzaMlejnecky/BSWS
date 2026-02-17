@@ -1,8 +1,8 @@
-package cz.hostingcentrum.config;
+package cz.hostingcentrum.Config;
 
-import cz.hostingcentrum.model.User;
-import cz.hostingcentrum.model.UserDetailsCustom;
-import cz.hostingcentrum.repository.UserRepo;
+import cz.hostingcentrum.Model.User;
+import cz.hostingcentrum.Model.UserDetailsCustom;
+import cz.hostingcentrum.Repository.UserRepo;
 import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

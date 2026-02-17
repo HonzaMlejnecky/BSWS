@@ -1,4 +1,4 @@
-package cz.hostingcentrum.config;
+package cz.hostingcentrum.Config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;

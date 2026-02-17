@@ -1,4 +1,4 @@
-package cz.hostingcentrum.config;
+package cz.hostingcentrum.Config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,4 +1,4 @@
-package cz.hostingcentrum.model;
+package cz.hostingcentrum.Model;
 
 import jakarta.persistence.*;
 import lombok.*;

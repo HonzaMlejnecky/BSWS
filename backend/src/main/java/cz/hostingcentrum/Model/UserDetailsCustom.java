@@ -1,4 +1,4 @@
-package cz.hostingcentrum.model;
+package cz.hostingcentrum.Model;
 
 import lombok.NonNull;
 import org.springframework.security.core.GrantedAuthority;

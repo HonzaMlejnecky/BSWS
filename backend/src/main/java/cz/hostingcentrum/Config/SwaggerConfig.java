@@ -1,4 +1,4 @@
-package cz.hostingcentrum.config;
+package cz.hostingcentrum.Config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

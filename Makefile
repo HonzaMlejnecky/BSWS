@@ -107,6 +107,13 @@ backend:
 	@docker compose ps backend
 	@echo "Backend restartovan."
 
+# Rebuild frontendu
+frontend:
+	@echo "Rebuilduji frontend..."
+	@docker compose up -d --build frontend
+	@docker compose ps frontend
+	@echo "Frontend restartovan."
+
 # Restart Apache (po zmene configu)
 web:
 	@echo "Restartuji Apache..."

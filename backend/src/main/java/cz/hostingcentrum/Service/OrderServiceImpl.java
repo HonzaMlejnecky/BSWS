@@ -1,15 +1,16 @@
-package cz.hostingcentrum.service;
+package cz.hostingcentrum.Service;
 
 import cz.hostingcentrum.DTO.CreateOrderDTO;
 import cz.hostingcentrum.DTO.OrderDTO;
 import cz.hostingcentrum.Enum.BillingCycle;
 import cz.hostingcentrum.Enum.OrderStatus;
-import cz.hostingcentrum.model.HostingPlan;
-import cz.hostingcentrum.model.Order;
-import cz.hostingcentrum.model.User;
-import cz.hostingcentrum.repository.HostingPlanRepo;
-import cz.hostingcentrum.repository.OrderRepo;
-import cz.hostingcentrum.repository.UserRepo;
+import cz.hostingcentrum.Interface.OrderService;
+import cz.hostingcentrum.Model.HostingPlan;
+import cz.hostingcentrum.Model.Order;
+import cz.hostingcentrum.Model.User;
+import cz.hostingcentrum.Repository.HostingPlanRepo;
+import cz.hostingcentrum.Repository.OrderRepo;
+import cz.hostingcentrum.Repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,13 +24,14 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class OrderService {
+public class OrderServiceImpl implements OrderService {
 
-    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+    private static final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
     private final OrderRepo orderRepo;
     private final HostingPlanRepo hostingPlanRepo;
     private final UserRepo userRepo;
 
+    @Override
     public List<OrderDTO> getOrdersByUserEmail(String email) {
         log.debug("Fetching orders for user: {}", email);
         Optional<User> user = userRepo.findByEmail(email);
@@ -44,6 +46,7 @@ public class OrderService {
     }
 
     @Transactional
+    @Override
     public OrderDTO createOrder(String userEmail, CreateOrderDTO createOrderDTO) {
         log.info("Creating order for user: {}, plan: {}", userEmail, createOrderDTO.getPlanCode());
 
@@ -73,6 +76,7 @@ public class OrderService {
     }
 
     @Transactional
+    @Override
     public OrderDTO simulatePayment(Long orderId) {
         log.info("Simulating payment for order: {}", orderId);
 
@@ -98,6 +102,7 @@ public class OrderService {
         return toDTO(saved);
     }
 
+    @Override
     public Optional<OrderDTO> getOrderById(Long id) {
         return orderRepo.findById(id).map(this::toDTO);
     }

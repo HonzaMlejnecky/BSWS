@@ -1,7 +1,8 @@
-package cz.hostingcentrum.repository;
+package cz.hostingcentrum.Repository;
 
 import cz.hostingcentrum.Enum.OrderStatus;
-import cz.hostingcentrum.model.Order;
+import cz.hostingcentrum.Model.Order;
+import cz.hostingcentrum.Model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

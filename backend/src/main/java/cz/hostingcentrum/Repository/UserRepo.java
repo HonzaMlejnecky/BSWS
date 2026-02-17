@@ -1,6 +1,6 @@
-package cz.hostingcentrum.repository;
+package cz.hostingcentrum.Repository;
 
-import cz.hostingcentrum.model.User;
+import cz.hostingcentrum.Model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

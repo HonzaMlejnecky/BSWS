@@ -1,8 +1,8 @@
-package cz.hostingcentrum.controller;
+package cz.hostingcentrum.Controller;
 
 import cz.hostingcentrum.DTO.HostingPlanDTO;
-import cz.hostingcentrum.model.HostingPlan;
-import cz.hostingcentrum.repository.HostingPlanRepo;
+import cz.hostingcentrum.Model.HostingPlan;
+import cz.hostingcentrum.Repository.HostingPlanRepo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

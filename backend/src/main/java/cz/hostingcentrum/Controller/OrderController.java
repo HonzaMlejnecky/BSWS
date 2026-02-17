@@ -1,8 +1,8 @@
-package cz.hostingcentrum.controller;
+package cz.hostingcentrum.Controller;
 
 import cz.hostingcentrum.DTO.CreateOrderDTO;
 import cz.hostingcentrum.DTO.OrderDTO;
-import cz.hostingcentrum.service.OrderService;
+import cz.hostingcentrum.Service.OrderServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.util.List;
 public class OrderController {
 
     private static final Logger log = LoggerFactory.getLogger(OrderController.class);
-    private final OrderService orderService;
+    private final OrderServiceImpl orderServiceImpl;
 
     @GetMapping
     @Operation(
@@ -31,7 +31,7 @@ public class OrderController {
     public ResponseEntity<List<OrderDTO>> getMyOrders(Authentication authentication) {
         String email = authentication.getName();
         log.debug("Fetching orders for user: {}", email);
-        List<OrderDTO> orders = orderService.getOrdersByUserEmail(email);
+        List<OrderDTO> orders = orderServiceImpl.getOrdersByUserEmail(email);
         return ResponseEntity.ok(orders);
     }
 
@@ -42,7 +42,7 @@ public class OrderController {
     )
     public ResponseEntity<OrderDTO> getOrderById(@PathVariable Long id) {
         log.debug("Fetching order: {}", id);
-        return orderService.getOrderById(id)
+        return orderServiceImpl.getOrderById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -59,7 +59,7 @@ public class OrderController {
         String email = authentication.getName();
         log.info("Creating order for user: {}, plan: {}", email, createOrderDTO.getPlanCode());
         try {
-            OrderDTO order = orderService.createOrder(email, createOrderDTO);
+            OrderDTO order = orderServiceImpl.createOrder(email, createOrderDTO);
             return ResponseEntity.ok(order);
         } catch (RuntimeException e) {
             log.error("Error creating order: {}", e.getMessage());
@@ -75,7 +75,7 @@ public class OrderController {
     public ResponseEntity<OrderDTO> simulatePayment(@PathVariable Long id) {
         log.info("Simulating payment for order: {}", id);
         try {
-            OrderDTO order = orderService.simulatePayment(id);
+            OrderDTO order = orderServiceImpl.simulatePayment(id);
             return ResponseEntity.ok(order);
         } catch (RuntimeException e) {
             log.error("Error processing payment: {}", e.getMessage());
