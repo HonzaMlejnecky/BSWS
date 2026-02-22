@@ -24,15 +24,15 @@
     # FRONTEND BUILD (jen pro build statického dist)
     # -----------------------
     frontend-build:
-      build:
-        context: ./frontend
-        dockerfile: Dockerfile
-      container_name: hc-frontend-build
-      volumes:
-        - ./frontend/dist:/app/build  # výstupní build mountovaný ven
-      command: /bin/true   # jen build, po dokončení kontejner skončí
-      networks:
-        - hosting-net
+          build:
+            context: ./frontend
+            dockerfile: Dockerfile
+          container_name: hc-frontend-build
+          volumes:
+            - ./frontend/dist:/out
+          command: sh -c "cp -R /app/dist/* /out/"
+          networks:
+           - hosting-net
 
     # ==========================================================================
     # APACHE HTTP SERVER (Reverse Proxy + Static Sites)
@@ -109,8 +109,6 @@
         - ./customers:/srv/customers
         - ./backend/src:/app/src
         - ./backend/pom.xml:/app/pom.xml
-        - ./backend/.mvn:/app/.mvn
-        - ./backend/mvnw:/app/mvnw
       ports:
         - "${BACKEND_PORT:-8080}:8080"
       networks:

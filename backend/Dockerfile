@@ -15,7 +15,6 @@ RUN --mount=type=cache,target=/root/.m2 \
 
 # --- Zkopíruj POM a stáhni dependencies ---
 COPY pom.xml ./
-COPY .mvn ./.mvn
 RUN --mount=type=cache,target=/root/.m2 mvn dependency:go-offline -B
 
 # --- Zkopíruj zdrojový kód a buildni aplikaci ---

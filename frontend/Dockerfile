@@ -6,7 +6,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-RUN npm run build  # vytvoří dist
+RUN npm run build
 
 # Stage 2: Production není potřeba, Apache mountuje dist
 CMD ["/bin/true"]
