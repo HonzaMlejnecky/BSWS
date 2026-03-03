@@ -9,7 +9,7 @@ export default function QuickActionsPanel({ onOpenCreateModal }) {
                     label="Create Project" 
                     icon="+" 
                     onClick={onOpenCreateModal} 
-                    highlight // Můžeme přidat prop pro zvýraznění
+                    highlight
                 />
                 <QuickAction label="Create Database" icon="🗄" href="/databases" />
                 <QuickAction label="Create FTP Account" icon="📂" href="/ftp" />
