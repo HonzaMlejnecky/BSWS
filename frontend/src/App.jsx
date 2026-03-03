@@ -6,12 +6,12 @@ import Services from './components/Services';
 import Features from './components/Features';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
-import DashboardPage from "./Dashboard.jsx";
-import ProjectsPage from "./ProjectPage.jsx";
-import DatabasesPage from "./DatabasePage.jsx";
-import WebmailPage from "./WbmailPage.jsx";
-import EmailPage from "./EmailPage.jsx";
-import FTPPage from "./FTPPage.jsx";
+import DashboardPage from "./pages/Dashboard.jsx";
+import ProjectsPage from "./pages/ProjectPage.jsx";
+import DatabasesPage from "./pages/DatabasePage.jsx";
+import WebmailPage from "./pages/WbmailPage.jsx";
+import EmailPage from "./pages/EmailPage.jsx";
+import FTPPage from "./pages/FTPPage.jsx";
 
 const Home = ({ onOpenModal }) => (
   <>
