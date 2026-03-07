@@ -3,9 +3,7 @@ package cz.hostingcentrum.DTO;
 import lombok.Data;
 
 @Data
-public class AuthDTO {
+public class LoginDto {
     private String email;
     private String password;
-    private String role;
 }
-

@@ -1,6 +1,7 @@
 package cz.hostingcentrum.Service;
 
-import cz.hostingcentrum.DTO.AuthDTO;
+import cz.hostingcentrum.DTO.LoginDto;
+import cz.hostingcentrum.DTO.RegisterDto;
 import cz.hostingcentrum.Enum.Role;
 import cz.hostingcentrum.Config.EncryptedKeyService;
 import cz.hostingcentrum.Config.JwtService;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -32,12 +34,12 @@ public class UserServiceImpl implements UserService {
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     @Override
-    public Optional<User> findByEmail(String email) {
-        return userRepo.findByEmail(email);
+    public User findByEmail(String email) {
+        return userRepo.findByEmail(email).orElse(null);
     }
 
     @Override
-    public String verify(AuthDTO authDto) {
+    public String verify(LoginDto authDto) {
         log.debug("Verifying user credentials for email: {}", authDto.getEmail());
         Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(authDto.getEmail(), authDto.getPassword()));
         if (authentication.isAuthenticated()) {
@@ -50,13 +52,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void register(AuthDTO auth) {
+    public void register(RegisterDto auth) {
         log.info("Registering new user: {}", auth.getEmail());
         User user = new User();
         user.setRole(Role.customer);
         user.setEmail(auth.getEmail());
-        user.setCreatedAt(LocalDate.now());
-        user.setPasswordHash(encoder.encode(auth.getPassword()));
+        user.setCreatedAt(LocalDateTime.now());
+        user.setPassword(encoder.encode(auth.getPassword()));
         user.setCode(encryptedKeyService.encrypt(encryptedKeyService.generateActivationCode() + ""));
         emailServiceImpl.registationMail(user.getEmail(), user.getCode());
         userRepo.save(user);
@@ -66,10 +68,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean verifyEmail(String email, String code) {
         log.debug("Verifying email for user: {}", email);
-        Optional<User> optionalUser = findByEmail(email);
+        User user = findByEmail(email);
 
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
+        if (user != null) {
             if (Objects.equals(encryptedKeyService.decrypt(user.getCode()), encryptedKeyService.decrypt(code))) {
                 user.setCode(null);
                 userRepo.save(user);

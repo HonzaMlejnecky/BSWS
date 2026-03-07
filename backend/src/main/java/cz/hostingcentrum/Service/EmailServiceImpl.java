@@ -23,7 +23,7 @@ public class EmailServiceImpl implements EmailService {
     public void setupMail(String sender, String recipient, String subject, String text, File attachment) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-        helper.setFrom("noreply@hostingcentrum.cz");
+        message.setFrom("postmaster@magehosting.cz");
 
         log.debug("Preparing email - sender: {}, recipient: {}, subject: {}", sender, recipient, subject);
         if (sender != null) {
@@ -49,7 +49,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void registationMail(String email, String code) {
 
-        String verificationUrl = String.format("http://localhost:8080/api/v1/auth/verify/email?code=%s&email=%s", code, email);
+        String verificationUrl = String.format("http://api.local/api/v1/auth/verify/email?code=%s&email=%s", code, email);
         log.info("Sending verification email to {} with URL: {}", email, verificationUrl);
         String subject = "Email Verification - Complete Your Registration";
 

@@ -6,12 +6,13 @@ import Services from './components/Services';
 import Features from './components/Features';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
-import DashboardPage from "./pages/Dashboard.jsx";
-import ProjectsPage from "./pages/ProjectPage.jsx";
-import DatabasesPage from "./pages/DatabasePage.jsx";
-import WebmailPage from "./pages/WbmailPage.jsx";
-import EmailPage from "./pages/EmailPage.jsx";
-import FTPPage from "./pages/FTPPage.jsx";
+import DashboardPage from "./Dashboard.jsx";
+import ProjectsPage from "./ProjectPage.jsx";
+import DatabasesPage from "./DatabasePage.jsx";
+import WebmailPage from "./WbmailPage.jsx";
+import EmailPage from "./EmailPage.jsx";
+import FTPPage from "./FTPPage.jsx";
+import SubscriptionPage from "./SubscrioptionPage.jsx";
 
 const Home = ({ onOpenModal }) => (
   <>
@@ -47,10 +48,11 @@ function App() {
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home onOpenModal={openModal} />} />
+            <Route path="/subscription" element={<SubscriptionPage/>}/>
             <Route path="/dashboard" element={<DashboardPage/>}/>
             <Route path="/projects" element={<ProjectsPage/>}/>
             <Route path="/databases" element={<DatabasesPage/>}/>
-            <Route path="/webmail" element={<WebmailPage/>}/>
+            {/*<Route path="/webmail" element={<WebmailPage/>}/>*/}
             <Route path="/dashboard/emails" element={<EmailPage/>}/>
             <Route path="/ftp" element={<FTPPage/>}/>
           </Routes>

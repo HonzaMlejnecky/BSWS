@@ -166,3 +166,36 @@ BSWS/
 | Pure-FTPd | BSD |
 | Mailpit | MIT |
 | Docker | Apache License 2.0 |
+
+
+## SFTP 
+- http://localhost:8084/
+- http://sftp.local
+
+## WEB
+-  http://frontend.local
+
+## BACKEND
+- http://localhost:8083/swagger-ui/index.html
+- http://api.local/swagger-ui/index.html
+
+## MAIL
+- https://localhost/mail/
+- https://mail.local/mail/
+- https://localhost/iredadmin/
+- https://mail.local/iredadmin/
+
+## PHPMYADMIN
+- http://localhost:8081/
+- http://dbadmin.local/index.php
+
+
+## Nastavení
+Pro správné fungování je potřeba pro dbadmin.local, frontend.local, mail.local, sftp.local, api.local
+nastavit v "C:\Windows\System32\drivers\etc\hosts" (Windows) nebo "/etc/hosts" (Linux/Mac) tyto záznamy (daný sobour musíte otevřít jako správce, aby šel uložit): 
+
+127.0.0.1 dbadmin.local
+127.0.0.1 frontend.local
+127.0.0.1 mail.local
+127.0.0.1 sftp.local
+127.0.0.1 dbadmin.local
