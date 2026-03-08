@@ -96,13 +96,15 @@
         # Database - root access for creating customer databases
         DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass123}
 
-        SPRING_MAIL_HOST: mail
+        SPRING_MAIL_HOST: mail.magehosting.cz
         SPRING_MAIL_PORT: 587
         SPRING_MAIL_USERNAME: postmaster@magehosting.cz
         SPRING_MAIL_PASSWORD: password
         SPRING_MAIL_PROTOCOL: smtp
-        SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: false
-        SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: false
+        SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+        SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+        SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "true"
+        SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_TRUST: "*"
 
         # Paths
         CUSTOMERS_PATH: /srv/customers
@@ -230,7 +232,9 @@
         - "993:993"
         - "995:995"
       networks:
-        - hosting-net
+        hosting-net:
+          aliases:
+              - mail.magehosting.cz
 
 
     # ==========================================================================

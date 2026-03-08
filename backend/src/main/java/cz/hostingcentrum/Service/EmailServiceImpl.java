@@ -23,7 +23,7 @@ public class EmailServiceImpl implements EmailService {
     public void setupMail(String sender, String recipient, String subject, String text, File attachment) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-        message.setFrom("postmaster@magehosting.cz");
+        helper.setFrom("postmaster@magehosting.cz");
 
         log.debug("Preparing email - sender: {}, recipient: {}, subject: {}", sender, recipient, subject);
         if (sender != null) {
