@@ -220,7 +220,7 @@ phpmyadmin:
 # Zastavit a smazat kontejnery (zachova DB data)
 clean:
 	@echo "Zastavuji a mazem kontejnery..."
-	@docker compose down
+	@docker compose down -v
 	@echo "Hotovo."
 
 # Vycistit Docker (uvolni misto na disku)

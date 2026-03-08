@@ -1,7 +1,7 @@
 package cz.hostingcentrum.Controller;
 
-import cz.hostingcentrum.DTO.AuthDTO;
-import cz.hostingcentrum.Enum.Role;
+import cz.hostingcentrum.DTO.LoginDto;
+import cz.hostingcentrum.DTO.RegisterDto;
 import cz.hostingcentrum.Model.User;
 import cz.hostingcentrum.Service.UserServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,10 +29,10 @@ public class AuthController {
             summary = "User login",
             description = "Authenticates user credentials and returns a JWT token if valid."
     )
-    public ResponseEntity<?> login(@RequestBody AuthDTO authDTO) {
+    public ResponseEntity<?> login(@RequestBody LoginDto authDTO) {
         log.debug("Login attempt for email: {}", authDTO.getEmail());
-        Optional<User> user = userServiceImpl.findByEmail(authDTO.getEmail());
-        if(user.isPresent() && user.get().getCode() != null) {
+        User user = userServiceImpl.findByEmail(authDTO.getEmail());
+        if(user != null && user.getCode() != null) {
             log.warn("Login failed - email not verified: {}", authDTO.getEmail());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("First verified your email");
         }
@@ -51,22 +51,11 @@ public class AuthController {
             summary = "Register new user",
             description = "Creates a new user account, sends verification email and saves to database."
     )
-    public ResponseEntity<?> register(@RequestBody AuthDTO authDto) {
+    public ResponseEntity<?> register(@RequestBody RegisterDto authDto) {
         log.debug("Registration attempt for email: {}", authDto.getEmail());
-        Optional<User> existingUser = userServiceImpl.findByEmail(authDto.getEmail());
-
-        if (existingUser.isPresent()) {
-            User user = existingUser.get();
-            authDto.setRole(user.getRole().name());
-            userServiceImpl.register(authDto);
-            log.info("User registration updated for existing email: {}", authDto.getEmail());
-            return ResponseEntity.ok("Account created successfully. Please check your email for verification.");
-        } else {
-            authDto.setRole(String.valueOf(Role.customer));
-            userServiceImpl.register(authDto);
-            log.info("New user registered: {}", authDto.getEmail());
-            return ResponseEntity.ok("Account created successfully. Please check your email for verification.");
-        }
+        userServiceImpl.register(authDto);
+        log.info("New user registered: {}", authDto.getEmail());
+        return ResponseEntity.ok("Account created successfully. Please check your email for verification.");
     }
 
     @GetMapping("/verify/email")
@@ -79,7 +68,7 @@ public class AuthController {
         log.debug("Email verification attempt: email={}, verified={}", email, isVerified);
         if (isVerified) {
             HttpHeaders headers = new HttpHeaders();
-            headers.setLocation(URI.create("http://localhost/login"));
+            headers.setLocation(URI.create("http://frontend.local?login=1"));
             return new ResponseEntity<>(headers, HttpStatus.FOUND);
         } else {
             return ResponseEntity.badRequest().body("Invalid verification code or email.");
