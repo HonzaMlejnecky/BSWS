@@ -1,33 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState } from 'react';
+import { ordersApi } from '../api/generatedClient';
+import { useAuth } from '../context/AuthContext';
 
 export default function useProjects() {
-    const [projects, setProjects] = useState([
-        {
-            id: 1,
-            name: "Portfolio",
-            type: "git",
-            status: "Running",
-            url: "https://portfolio.hostpanel.dev",
-            gitUrl: "https://github.com/user/portfolio",
-            logs: ["Build started...", "Deploy complete"],
-        },
-    ]);
+  const { userId } = useAuth();
+  const [projects, setProjects] = useState([]);
 
-    const addProject = (project) => setProjects((prev) => [...prev, project]);
+  useEffect(() => {
+    let mounted = true;
+    ordersApi.getByUser(userId)
+      .then((orders) => {
+        if (!mounted) return;
+        const mapped = (orders || []).map((order) => ({
+          id: order.id,
+          name: order.orderNumber || `Subscription ${order.id}`,
+          type: 'hosting-plan',
+          status: order.status || 'active',
+          url: '#',
+          gitUrl: '',
+          logs: [`Plan ${order.planId}`, `Expires: ${order.expiresAt || '-'}`],
+        }));
+        setProjects(mapped);
+      })
+      .catch(() => setProjects([]));
 
-    const deleteProject = (id) => setProjects((prev) => prev.filter((p) => p.id !== id));
-
-    const redeployProject = (id) => {
-        setProjects((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, status: "Deploying" } : p))
-        );
-
-        setTimeout(() => {
-            setProjects((prev) =>
-                prev.map((p) => (p.id === id ? { ...p, status: "Running" } : p))
-            );
-        }, 2000);
+    return () => {
+      mounted = false;
     };
+  }, [userId]);
 
-    return { projects, addProject, deleteProject, redeployProject };
+  const addProject = (project) => setProjects((prev) => [...prev, { ...project, id: Date.now() }]);
+  const deleteProject = (id) => setProjects((prev) => prev.filter((p) => p.id !== id));
+  const redeployProject = (id) => setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, status: 'updating' } : p)));
+
+  return { projects, addProject, deleteProject, redeployProject };
 }

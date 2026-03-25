@@ -6,17 +6,17 @@ import Services from './components/Services';
 import Features from './components/Features';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
-import DashboardPage from "./pages/Dashboard.jsx";
-import ProjectsPage from "./pages/ProjectPage.jsx";
-import DatabasesPage from "./pages/DatabasePage.jsx";
-import WebmailPage from "./pages/WbmailPage.jsx";
-import EmailPage from "./pages/EmailPage.jsx";
-import FTPPage from "./pages/FTPPage.jsx";
-import SubscriptionPage from "./SubscrioptionPage.jsx";
+import DashboardPage from './pages/Dashboard.jsx';
+import ProjectsPage from './pages/ProjectPage.jsx';
+import DatabasesPage from './pages/DatabasePage.jsx';
+import EmailPage from './pages/EmailPage.jsx';
+import FTPPage from './pages/FTPPage.jsx';
+import SubscriptionPage from './SubscrioptionPage.jsx';
+import ProtectedRoute from './components/routing/ProtectedRoute';
 
 const Home = ({ onOpenModal }) => (
   <>
-    <Hero onOpenModal={onOpenModal} /> 
+    <Hero onOpenModal={onOpenModal} />
     <Services />
     <Features />
   </>
@@ -31,30 +31,20 @@ function App() {
     setIsModalOpen(true);
   };
 
-  const closeModal = () => setIsModalOpen(false);
-
   return (
     <Router>
-      <AuthModal 
-        isOpen={isModalOpen} 
-        onClose={closeModal} 
-        initialLoginMode={modalMode} 
-      />
-
-      <div className={`min-h-screen bg-white flex flex-col`}>
-        
+      <AuthModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialLoginMode={modalMode} />
+      <div className="min-h-screen bg-white flex flex-col">
         <Navbar onOpenModal={() => openModal(true)} />
-        
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home onOpenModal={openModal} />} />
-            <Route path="/subscription" element={<SubscriptionPage/>}/>
-            <Route path="/dashboard" element={<DashboardPage/>}/>
-            <Route path="/projects" element={<ProjectsPage/>}/>
-            <Route path="/databases" element={<DatabasesPage/>}/>
-            {/*<Route path="/webmail" element={<WebmailPage/>}/>*/}
-            <Route path="/dashboard/emails" element={<EmailPage/>}/>
-            <Route path="/ftp" element={<FTPPage/>}/>
+            <Route path="/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+            <Route path="/databases" element={<ProtectedRoute><DatabasesPage /></ProtectedRoute>} />
+            <Route path="/dashboard/emails" element={<ProtectedRoute><EmailPage /></ProtectedRoute>} />
+            <Route path="/ftp" element={<ProtectedRoute><FTPPage /></ProtectedRoute>} />
           </Routes>
         </main>
         <Footer />

@@ -5,63 +5,55 @@ import cz.hostingcentrum.DTO.CreateEmailDomainDTO;
 import cz.hostingcentrum.DTO.EmailAccountDTO;
 import cz.hostingcentrum.DTO.EmailDomainDTO;
 import cz.hostingcentrum.Interface.EmailService;
+import cz.hostingcentrum.generated.api.EmailApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/email")
 @RequiredArgsConstructor
-public class EmailController {
+public class EmailController implements EmailApi {
 
     private final EmailService service;
 
-    // ================= DOMAIN =================
-
-    @PostMapping("/domain/create")
-    public ResponseEntity<CreateEmailDomainDTO> createDomain(@RequestBody CreateEmailDomainDTO dto) {
+    @Override
+    public ResponseEntity<CreateEmailDomainDTO> createDomain(CreateEmailDomainDTO dto) {
         return new ResponseEntity<>(service.createDomain(dto), HttpStatus.CREATED);
     }
 
-    @GetMapping("/domain/user/{userId}")
-    public ResponseEntity<List<EmailDomainDTO>> getDomainsByUser(@PathVariable Long userId) {
+    @Override
+    public ResponseEntity<List<EmailDomainDTO>> getDomainsByUser(Long userId) {
         return ResponseEntity.ok(service.getDomainsByUser(userId));
     }
 
-    @DeleteMapping("/domain/{id}")
-    public ResponseEntity<Void> deleteDomain(@PathVariable Long id) {
+    @Override
+    public ResponseEntity<Void> deleteDomain(Long id) {
         service.deleteDomain(id);
         return ResponseEntity.noContent().build();
     }
 
-    // ================= EMAIL ACCOUNTS =================
-
-    @PostMapping("/account/create")
-    public ResponseEntity<EmailAccountDTO> createAccount(@RequestBody EmailAccountDTO dto) {
+    @Override
+    public ResponseEntity<EmailAccountDTO> createAccount(EmailAccountDTO dto) {
         return new ResponseEntity<>(service.createEmailAccount(dto), HttpStatus.CREATED);
     }
 
-    @GetMapping("/account/domain/{domainId}")
-    public ResponseEntity<List<EmailAccountDTO>> getAccountsByDomain(@PathVariable Long domainId) {
+    @Override
+    public ResponseEntity<List<EmailAccountDTO>> getAccountsByDomain(Long domainId) {
         return ResponseEntity.ok(service.getAccountsByDomain(domainId));
     }
 
-    @DeleteMapping("/account/{id}")
-    public ResponseEntity<Void> deleteAccount(@PathVariable Long id) {
+    @Override
+    public ResponseEntity<Void> deleteAccount(Long id) {
         service.deleteEmailAccount(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/change-password")
-    public ResponseEntity<String> changePassword(@RequestBody ChangeEmailPasswordDTO dto) {
-        try {
-            service.changeEmailPassword(dto.getAccountId(), dto.getNewPassword());
-            return ResponseEntity.ok("Password changed successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
-        }
+    @Override
+    public ResponseEntity<String> changeEmailPassword(ChangeEmailPasswordDTO dto) {
+        service.changeEmailPassword(dto.getAccountId(), dto.getNewPassword());
+        return ResponseEntity.ok("Password changed successfully");
     }
 }

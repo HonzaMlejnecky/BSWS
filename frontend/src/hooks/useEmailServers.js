@@ -1,33 +1,48 @@
-import React, { useState } from "react";
+import { useEffect, useState } from 'react';
+import { emailApi } from '../api/generatedClient';
+import { useAuth } from '../context/AuthContext';
 
 export default function useEmailServers() {
-    const [emailServers, setEmailServers] = useState([
-        {
-            id: "1",
-            domain: "example.com",
-            smtpHost: "smtp.example.com",
-            imapHost: "imap.example.com",
-            mailboxes: [
-                { id: "m1", address: "admin@example.com", password: "123456" },
-                { id: "m2", address: "info@example.com", password: "123456" }
-            ]
-        }
-    ]);
+  const { userId } = useAuth();
+  const [emailServers, setEmailServers] = useState([]);
 
-    const createServer = (newServer) => setEmailServers(prev => [...prev, newServer]);
-    const deleteServer = (id) => setEmailServers(prev => prev.filter(s => s.id !== id));
-    
-    const addMailbox = (server, mailbox) => {
-        setEmailServers(prev => prev.map(s => s.id === server.id ? { ...s, mailboxes: [...s.mailboxes, mailbox] } : s));
-    };
-    
-    const deleteMailbox = (serverId, mailboxId) => {
-        setEmailServers(prev => prev.map(s => s.id === serverId ? { ...s, mailboxes: s.mailboxes.filter(m => m.id !== mailboxId) } : s));
-    };
+  const reload = () => emailApi.getDomainsByUser(userId)
+    .then((domains) => {
+      setEmailServers((domains || []).map((domain) => ({
+        id: String(domain.id),
+        domain: domain.domainName,
+        smtpHost: `smtp.${domain.domainName}`,
+        imapHost: `imap.${domain.domainName}`,
+        mailboxes: (domain.accounts || []).map((mb) => ({ id: String(mb.id), address: mb.emailAddress, password: '' })),
+      })));
+    })
+    .catch(() => setEmailServers([]));
 
-    const changePassword = (mailbox, serverId, newPassword) => {
-        setEmailServers(prev => prev.map(s => s.id === serverId ? { ...s, mailboxes: s.mailboxes.map(m => m.id === mailbox.id ? { ...m, password: newPassword } : m) } : s));
-    };
+  useEffect(() => { reload(); }, [userId]);
 
-    return { emailServers, createServer, deleteServer, addMailbox, deleteMailbox, changePassword };
+  const createServer = async (newServer) => {
+    await emailApi.createDomain({ domainName: newServer.domain, userId });
+    await reload();
+  };
+
+  const deleteServer = async (id) => {
+    await emailApi.removeDomain(id);
+    await reload();
+  };
+
+  const addMailbox = async (server, mailbox) => {
+    await emailApi.createAccount({ domainId: Number(server.id), emailAddress: mailbox.address, password: mailbox.password });
+    await reload();
+  };
+
+  const deleteMailbox = async (_serverId, mailboxId) => {
+    await emailApi.removeAccount(mailboxId);
+    await reload();
+  };
+
+  const changePassword = async (mailbox, _serverId, newPassword) => {
+    await emailApi.changePassword({ accountId: Number(mailbox.id), newPassword });
+  };
+
+  return { emailServers, createServer, deleteServer, addMailbox, deleteMailbox, changePassword };
 }

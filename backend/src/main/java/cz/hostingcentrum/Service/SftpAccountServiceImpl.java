@@ -4,6 +4,7 @@ import cz.hostingcentrum.DTO.SftpAccountDto;
 import cz.hostingcentrum.Enum.SubscriptionStatus;
 import cz.hostingcentrum.Interface.SftpAccountService;
 import cz.hostingcentrum.Interface.SftpgoApiService;
+import cz.hostingcentrum.Mapper.SftpAccountMapper;
 import cz.hostingcentrum.Model.SftpAccount;
 import cz.hostingcentrum.Model.Subscription;
 import cz.hostingcentrum.Model.User;
@@ -29,36 +30,20 @@ public class SftpAccountServiceImpl implements SftpAccountService {
     private final UserRepo userRepo;
     private final SubscriptionRepo subscriptionRepo;
     private final SftpgoApiService sftpgoApiService;
-
+    private final SftpAccountMapper sftpAccountMapper;
 
     public List<SftpAccountDto> getUserSftpAccounts(Long userId) {
-        return sftpAccountRepo.findByUserId(userId)
-                .stream()
-                .map(acc -> {
-                    SftpAccountDto dto = new SftpAccountDto();
-                    dto.setId(acc.getId());
-                    dto.setUserId(acc.getUser().getId());
-                    dto.setUsername(acc.getSftpUsername());
-                    dto.setHomeDirectory(acc.getHomeDirectory());
-                    return dto;
-                })
-                .toList();
+        return sftpAccountRepo.findByUserId(userId).stream().map(sftpAccountMapper::toDto).toList();
     }
 
     public void deleteSftpAccount(Long id) {
-
-        SftpAccount account = sftpAccountRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("SFTP account not found"));
-
+        SftpAccount account = sftpAccountRepo.findById(id).orElseThrow(() -> new RuntimeException("SFTP account not found"));
         sftpgoApiService.deleteUser(account.getSftpUsername());
 
         Path homeDir = Paths.get("/srv/sftpgo/data", account.getUser().getId() + "/" + account.getSftpUsername());
         try {
             if (Files.exists(homeDir)) {
-                Files.walk(homeDir)
-                        .sorted(Comparator.reverseOrder())
-                        .map(Path::toFile)
-                        .forEach(File::delete);
+                Files.walk(homeDir).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete home directory: " + homeDir, e);
@@ -68,65 +53,38 @@ public class SftpAccountServiceImpl implements SftpAccountService {
     }
 
     public void updateSftpPassword(Long accountId, String newPassword) {
-
-        SftpAccount account = sftpAccountRepo.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("SFTP account not found"));
-
-        // Zavolá API pro změnu hesla
+        SftpAccount account = sftpAccountRepo.findById(accountId).orElseThrow(() -> new RuntimeException("SFTP account not found"));
         sftpgoApiService.updateUserPassword(account.getSftpUsername(), newPassword);
         account.setUpdatedAt(LocalDateTime.now());
         sftpAccountRepo.save(account);
     }
 
     public SftpAccountDto createSftpAccount(SftpAccountDto dto) {
+        User user = userRepo.findById(dto.getUserId()).orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        User user = userRepo.findById(dto.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        Subscription activeSub = subscriptionRepo
-                .findByUserId(user.getId())
-                .stream()
+        Subscription activeSub = subscriptionRepo.findByUserId(user.getId()).stream()
                 .filter(s -> s.getStatus() == SubscriptionStatus.active)
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("No active subscription"));
 
-        int maxSftp = activeSub.getPlan().getMaxFtpAccounts();
-        long currentCount = sftpAccountRepo.countByUserId(user.getId());
-
-        if (currentCount >= maxSftp) {
+        if (sftpAccountRepo.countByUserId(user.getId()) >= activeSub.getPlan().getMaxFtpAccounts()) {
             throw new RuntimeException("SFTP limit exceeded");
         }
 
         String homeDir = "/srv/sftpgo/data/" + user.getId() + "/" + dto.getHomeDirectory();
         File dir = new File(homeDir);
-        if (!dir.exists()) {
-            boolean created = dir.mkdirs();
-            if (!created) {
-                throw new RuntimeException("Failed to create home directory: " + homeDir);
-            }
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new RuntimeException("Failed to create home directory: " + homeDir);
         }
 
-        sftpgoApiService.createUser(
-                dto.getUsername(),
-                dto.getPassword(),
-                homeDir
-        );
+        sftpgoApiService.createUser(dto.getUsername(), dto.getPassword(), homeDir);
 
-        SftpAccount account = new SftpAccount();
+        SftpAccount account = sftpAccountMapper.toEntity(dto);
         account.setUser(user);
-        account.setSftpUsername(dto.getUsername());
         account.setCreatedAt(LocalDateTime.now());
         account.setIsActive(true);
         account.setHomeDirectory(homeDir);
 
-        SftpAccount saved = sftpAccountRepo.save(account);
-
-        SftpAccountDto response = new SftpAccountDto();
-        response.setId(saved.getId());
-        response.setUserId(user.getId());
-        response.setUsername(saved.getSftpUsername());
-        response.setHomeDirectory(saved.getHomeDirectory());
-
-        return response;
+        return sftpAccountMapper.toDto(sftpAccountRepo.save(account));
     }
 }
