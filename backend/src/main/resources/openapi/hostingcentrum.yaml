@@ -387,6 +387,84 @@ paths:
               $ref: '#/components/schemas/ChangePassDbDTO'
       responses:
         '200': { description: Password changed }
+  /api/v1/projects:
+    post:
+      tags: [Project]
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectDTO'
+      responses:
+        '201':
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDTO'
+  /api/v1/projects/user/{userId}:
+    get:
+      tags: [Project]
+      operationId: getUserProjects
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: User projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectDTO'
+  /api/v1/projects/{projectId}:
+    delete:
+      tags: [Project]
+      operationId: deleteProject
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204': { description: Deleted }
+  /api/v1/projects/{projectId}/publish:
+    post:
+      tags: [Project]
+      operationId: publishProject
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Published project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDTO'
+  /api/v1/projects/{projectId}/redeploy:
+    post:
+      tags: [Project]
+      operationId: redeployProject
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Redeployed project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDTO'
 components:
   schemas:
     LoginDto: { type: object }
@@ -402,6 +480,8 @@ components:
     CreateDbDTO: { type: object }
     CustomerDatabaseDTO: { type: object }
     ChangePassDbDTO: { type: object }
+    CreateProjectDTO: { type: object }
+    ProjectDTO: { type: object }
     SubscriptionStatus:
       type: string
       enum: [active, suspended, cancelled]

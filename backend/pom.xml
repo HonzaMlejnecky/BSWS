@@ -227,6 +227,8 @@
 								<CreateDbDTO>cz.hostingcentrum.DTO.CreateDbDTO</CreateDbDTO>
 								<CustomerDatabaseDTO>cz.hostingcentrum.DTO.CustomerDatabaseDTO</CustomerDatabaseDTO>
 								<ChangePassDbDTO>cz.hostingcentrum.DTO.ChangePassDbDTO</ChangePassDbDTO>
+								<CreateProjectDTO>cz.hostingcentrum.DTO.CreateProjectDTO</CreateProjectDTO>
+								<ProjectDTO>cz.hostingcentrum.DTO.ProjectDTO</ProjectDTO>
 								<SubscriptionStatus>cz.hostingcentrum.Enum.SubscriptionStatus</SubscriptionStatus>
 							</importMappings>
 							<generateModelTests>false</generateModelTests>

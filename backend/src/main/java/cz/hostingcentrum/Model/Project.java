@@ -20,6 +20,18 @@ public class Project {
     @Column(name = "project_name", nullable = false)
     private String projectName;
 
+    @Column(name = "domain", nullable = false, unique = true)
+    private String domain;
+
+    @Column(name = "document_root", nullable = false)
+    private String documentRoot;
+
+    @Column(name = "runtime", nullable = false)
+    private String runtime;
+
+    @Column(name = "publication_status", nullable = false)
+    private String publicationStatus;
+
     @Column(name = "is_active")
     private Boolean isActive;
 
