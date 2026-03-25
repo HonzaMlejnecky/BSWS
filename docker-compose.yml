@@ -113,6 +113,7 @@
         - ./customers:/srv/customers
         - ./backend/src:/app/src
         - ./backend/pom.xml:/app/pom.xml
+        - sftpgodata:/srv/sftpgo/data
       ports:
         - "${BACKEND_PORT:-8083}:8080"
       networks:
@@ -180,13 +181,15 @@
         - sftpgodata:/srv/sftpgo
         - sftpgohome:/var/lib/sftpgo
       environment:
+        - SFTPGO_DATA_PROVIDER__DRIVER=sqlite
+        - SFTPGO_DATA_PROVIDER__NAME=/var/lib/sftpgo/sftpgo.db
+        - SFTPGO_DATA_PROVIDER__UPDATE_MODE=0
+        - SFTPGO_DATA_PROVIDER__CREATE_DEFAULT_ADMIN=true
+        - SFTPGO_DEFAULT_ADMIN_USERNAME=sftpgo
+        - SFTPGO_DEFAULT_ADMIN_PASSWORD=sftpgo
         - SFTPGO_HTTPD_BINDINGS_0_PORT=8080
         - SFTPGO_HTTPD_BINDINGS_0_ADDRESS=0.0.0.0
-        - SFTPGO_DEFAULT_ADMIN_USERNAME=admin
-        - SFTPGO_DEFAULT_ADMIN_PASSWORD=admin
-        - SFTPGO_WEBDAVD_BINDINGS_0_PORT=10080
-        - SFTPGO_FTPD_BINDINGS_0_PORT=2121
-      restart: unless-stopped
+        - SFTPGO_HTTPD_ENABLE_API=true
       networks:
         - hosting-net
 
@@ -214,6 +217,7 @@
         - SOGO_WORKERS=1
         - TIMEZONE=Europe/Prague
         - POSTMASTER_PASSWORD={PLAIN}password
+        - ENABLE_WEBADMIN=YES
         - DISABLE_SSL=FALSE
         - IREDAPD_PLUGINS=['reject_null_sender', 'reject_sender_login_mismatch', 'greylisting', 'throttle', 'amavisd_wblist', 'sql_alias_access_policy']
       volumes:

@@ -33,6 +33,6 @@ public class EmailAccount {
     private LocalDateTime updatedAt;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "domain_id")
+    private EmailDomain emailDomain;
 }

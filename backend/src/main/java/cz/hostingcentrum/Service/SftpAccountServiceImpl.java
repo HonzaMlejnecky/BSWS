@@ -3,6 +3,7 @@ package cz.hostingcentrum.Service;
 import cz.hostingcentrum.DTO.SftpAccountDto;
 import cz.hostingcentrum.Enum.SubscriptionStatus;
 import cz.hostingcentrum.Interface.SftpAccountService;
+import cz.hostingcentrum.Interface.SftpgoApiService;
 import cz.hostingcentrum.Model.SftpAccount;
 import cz.hostingcentrum.Model.Subscription;
 import cz.hostingcentrum.Model.User;
@@ -12,11 +13,13 @@ import cz.hostingcentrum.Repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,19 +28,60 @@ public class SftpAccountServiceImpl implements SftpAccountService {
     private final SftpAccountRepo sftpAccountRepo;
     private final UserRepo userRepo;
     private final SubscriptionRepo subscriptionRepo;
+    private final SftpgoApiService sftpgoApiService;
 
-    // ==========================
-    // CREATE SFTP ACCOUNT
-    // ==========================
-    public SftpAccountDto createSftpAccount(SftpAccountDto dto)
-            throws IOException, InterruptedException {
 
-        Optional<User> userOpt = userRepo.findById(dto.getUserId());
-        if (userOpt.isEmpty()) {
-            throw new IllegalArgumentException("User not found");
+    public List<SftpAccountDto> getUserSftpAccounts(Long userId) {
+        return sftpAccountRepo.findByUserId(userId)
+                .stream()
+                .map(acc -> {
+                    SftpAccountDto dto = new SftpAccountDto();
+                    dto.setId(acc.getId());
+                    dto.setUserId(acc.getUser().getId());
+                    dto.setUsername(acc.getSftpUsername());
+                    dto.setHomeDirectory(acc.getHomeDirectory());
+                    return dto;
+                })
+                .toList();
+    }
+
+    public void deleteSftpAccount(Long id) {
+
+        SftpAccount account = sftpAccountRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("SFTP account not found"));
+
+        sftpgoApiService.deleteUser(account.getSftpUsername());
+
+        Path homeDir = Paths.get("/srv/sftpgo/data", account.getUser().getId() + "/" + account.getSftpUsername());
+        try {
+            if (Files.exists(homeDir)) {
+                Files.walk(homeDir)
+                        .sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete home directory: " + homeDir, e);
         }
 
-        User user = userOpt.get();
+        sftpAccountRepo.delete(account);
+    }
+
+    public void updateSftpPassword(Long accountId, String newPassword) {
+
+        SftpAccount account = sftpAccountRepo.findById(accountId)
+                .orElseThrow(() -> new RuntimeException("SFTP account not found"));
+
+        // Zavolá API pro změnu hesla
+        sftpgoApiService.updateUserPassword(account.getSftpUsername(), newPassword);
+        account.setUpdatedAt(LocalDateTime.now());
+        sftpAccountRepo.save(account);
+    }
+
+    public SftpAccountDto createSftpAccount(SftpAccountDto dto) {
+
+        User user = userRepo.findById(dto.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         Subscription activeSub = subscriptionRepo
                 .findByUserId(user.getId())
@@ -53,31 +97,26 @@ public class SftpAccountServiceImpl implements SftpAccountService {
             throw new RuntimeException("SFTP limit exceeded");
         }
 
-        String homeDir = "/var/sftp/" + dto.getUsername();
+        String homeDir = "/srv/sftpgo/data/" + user.getId() + "/" + dto.getHomeDirectory();
+        File dir = new File(homeDir);
+        if (!dir.exists()) {
+            boolean created = dir.mkdirs();
+            if (!created) {
+                throw new RuntimeException("Failed to create home directory: " + homeDir);
+            }
+        }
 
-        // 🔥 1️⃣ nejdřív vytvoříme OS usera
-        ProcessBuilder pb = new ProcessBuilder(
-                "sh",
-                "Script/create-sftp-user.sh",
+        sftpgoApiService.createUser(
                 dto.getUsername(),
                 dto.getPassword(),
                 homeDir
         );
 
-        pb.redirectErrorStream(true);
-        Process process = pb.start();
-
-        int exitCode = process.waitFor();
-
-        if (exitCode != 0) {
-            throw new RuntimeException("Failed to create SFTP user in system");
-        }
-
-        // 🔥 2️⃣ až teď uložíme do DB
         SftpAccount account = new SftpAccount();
         account.setUser(user);
         account.setSftpUsername(dto.getUsername());
         account.setCreatedAt(LocalDateTime.now());
+        account.setIsActive(true);
         account.setHomeDirectory(homeDir);
 
         SftpAccount saved = sftpAccountRepo.save(account);
@@ -89,26 +128,5 @@ public class SftpAccountServiceImpl implements SftpAccountService {
         response.setHomeDirectory(saved.getHomeDirectory());
 
         return response;
-    }
-
-    // ==========================
-    // GET ALL FOR USER
-    // ==========================
-    public List<SftpAccountDto> getUserSftpAccounts(Long userId) {
-        return sftpAccountRepo.findByUserId(userId)
-                .stream()
-                .map(acc -> {
-                    SftpAccountDto dto = new SftpAccountDto();
-                    dto.setId(acc.getId());
-                    dto.setUserId(acc.getUser().getId());
-                    dto.setUsername(acc.getSftpUsername());
-                    dto.setHomeDirectory(acc.getHomeDirectory());
-                    return dto;
-                })
-                .collect(Collectors.toList());
-    }
-
-    public void deleteSftpAccount(Long id) {
-        sftpAccountRepo.deleteById(id);
     }
 }

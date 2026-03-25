@@ -49,15 +49,18 @@ INSERT INTO customer_databases (user_id, db_name, db_user, created_at, updated_a
 (3, 'cust_psvobodova_web', 'cust_psvobodova',  NOW(), NOW()),
 (4, 'cust_kdvorak_eshop', 'cust_kdvorak',  NOW(), NOW());
 
+INSERT INTO email_domains (domain_name,user_id,is_active,created_at) VALUES
+("test", 2, true, NOW() );
+
 -- EMAIL ACCOUNTS
-INSERT INTO email_accounts (user_id, email_address, is_active, created_at, updated_at) VALUES
-(2,  'info@mojefirma.cz', TRUE, NOW(), NOW()),
-(2,  'jan@mojefirma.cz', TRUE, NOW(), NOW()),
-(3, 'info@druhafirma.cz', TRUE, NOW(), NOW()),
-(3,  'petra@druhafirma.cz', TRUE, NOW(), NOW()),
-(4,  'info@tretifirma.cz', TRUE, NOW(), NOW()),
-(4,  'obchod@tretifirma.cz', TRUE, NOW(), NOW()),
-(4,  'podpora@eshop-dvorak.cz', TRUE, NOW(), NOW());
+INSERT INTO email_accounts (domain_id, email_address, is_active, created_at, updated_at) VALUES
+(1,  'info@mojefirma.cz', TRUE, NOW(), NOW()),
+(1,  'jan@mojefirma.cz', TRUE, NOW(), NOW()),
+(1, 'info@druhafirma.cz', TRUE, NOW(), NOW()),
+(1,  'petra@druhafirma.cz', TRUE, NOW(), NOW()),
+(1,  'info@tretifirma.cz', TRUE, NOW(), NOW()),
+(1,  'obchod@tretifirma.cz', TRUE, NOW(), NOW()),
+(1,  'podpora@eshop-dvorak.cz', TRUE, NOW(), NOW());
 
 -- PAYMENTS
 INSERT INTO payments (user_id,  payment_number, amount, currency, status, payment_method, paid_at, created_at, updated_at) VALUES

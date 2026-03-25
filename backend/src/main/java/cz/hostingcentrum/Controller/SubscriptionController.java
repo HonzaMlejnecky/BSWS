@@ -19,11 +19,11 @@ public class SubscriptionController {
     private final SubscriptionService subscriptionService;
 
     // ========================================================================
-    // GET all subscriptions
+    // GET all subscriptions for user
     // ========================================================================
-    @GetMapping
-    public ResponseEntity<List<SubscriptionDto>> getAllSubscriptions() {
-        List<SubscriptionDto> subscriptions = subscriptionService.getAllSubscriptions();
+    @GetMapping("/{userId}")
+    public ResponseEntity<List<SubscriptionDto>> getAllSubscriptions(@PathVariable Long userId) {
+        List<SubscriptionDto> subscriptions = subscriptionService.getAllSubscriptionsByUserId(userId);
         return new ResponseEntity<>(subscriptions, HttpStatus.OK);
     }
 
@@ -59,15 +59,6 @@ public class SubscriptionController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(updated, HttpStatus.OK);
-    }
-
-    // ========================================================================
-    // DELETE subscription
-    // ========================================================================
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSubscription(@PathVariable Long id) {
-        subscriptionService.deleteSubscription(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
 

@@ -1,0 +1,67 @@
+{
+"register":
+{
+  "email": "test@test.cz",
+  "password": "test",
+  "firstName": "test",
+  "lastName": "test",
+  "street": "test 16",
+  "city": "test",
+  "postalCode": "5000",
+  "country": "CZ",
+  "phone": "777 666 555"
+},
+
+"login":
+{
+  "email": "test@test.cz",
+  "password": "test"
+},
+
+
+"sftpCreateAcc":
+{
+  "id": 0,
+  "userId": 7,
+  "username": "test",
+  "homeDirectory": "test",
+  "password": "test"
+},
+
+
+  "sftpChangePass":
+  {
+    "accountId": 5,
+    "newPassword": "pokus"
+  },
+
+  "createDatabase":
+  {
+    "userId": 7,
+    "dbName": "test",
+    "username": "test",
+    "password": "test"
+  },
+
+  "changePasswordDatabase":
+  {
+    "databaseId": 4,
+    "newPassword": "pokus"
+  },
+  "createEmailDomain":
+  {
+    "id": 0,
+    "domainName": "test",
+    "userId": 7,
+    "isActive": true
+  },
+
+  "createEmailAccount":
+  {
+    "id": 0,
+    "domainId": 2,
+    "password": "test",
+    "emailAddress": "test@test.cz",
+    "isActive": true
+  }
+}
