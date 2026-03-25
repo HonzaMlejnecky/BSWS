@@ -11,9 +11,11 @@ import cz.hostingcentrum.Repository.PlanRepo;
 import cz.hostingcentrum.Repository.SubscriptionRepo;
 import cz.hostingcentrum.Repository.UserRepo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,8 +31,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final UserRepo userRepo;
     private final SubscriptionMapper subscriptionMapper;
 
-    public List<SubscriptionDto> getAllSubscriptionsByUserId(Long userId) {
-        return subscriptionRepo.findByUserId(userId).stream().map(subscriptionMapper::toDto).toList();
+    public List<SubscriptionDto> getAllSubscriptionsForCurrentUser() {
+        User currentUser = getCurrentUser();
+        return subscriptionRepo.findByUserId(currentUser.getId()).stream().map(subscriptionMapper::toDto).toList();
     }
 
     public SubscriptionDto getSubscriptionById(Long id) {
@@ -38,22 +41,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     public SubscriptionDto createSubscription(Long plan) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            return null;
-        }
-
-        Optional<User> userOpt = userRepo.findByEmail(authentication.getName());
+        User user = getCurrentUser();
         Optional<Plan> planOpt = planRepo.findById(plan);
-        if (userOpt.isEmpty()) {
-            throw new IllegalArgumentException("User not found");
-        }
         if (planOpt.isEmpty()) {
             throw new IllegalArgumentException("Plan not found");
         }
 
         Subscription subscription = new Subscription();
-        subscription.setUser(userOpt.get());
+        subscription.setUser(user);
         subscription.setPlan(planOpt.get());
         subscription.setPricePaid(planOpt.get().getPriceMonthly());
         subscription.setCreatedAt(LocalDateTime.now());
@@ -72,7 +67,20 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             return null;
         }
         Subscription subscription = optional.get();
+        User currentUser = getCurrentUser();
+        if (!subscription.getUser().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot modify another user's subscription");
+        }
         subscription.setStatus(status);
         return subscriptionMapper.toDto(subscriptionRepo.save(subscription));
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        return userRepo.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 }

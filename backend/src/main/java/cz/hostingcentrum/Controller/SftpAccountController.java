@@ -30,8 +30,8 @@ public class SftpAccountController implements SftpApi {
     }
 
     @Override
-    public ResponseEntity<List<SftpAccountDto>> getSftpAccountsByUser(Long userId) {
-        return new ResponseEntity<>(service.getUserSftpAccounts(userId), HttpStatus.OK);
+    public ResponseEntity<List<SftpAccountDto>> getSftpAccountsByUser() {
+        return new ResponseEntity<>(service.getCurrentUserSftpAccounts(), HttpStatus.OK);
     }
 
     @Override

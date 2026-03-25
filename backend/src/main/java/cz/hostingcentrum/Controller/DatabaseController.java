@@ -20,13 +20,13 @@ public class DatabaseController implements DatabaseApi {
 
     @Override
     public ResponseEntity<CustomerDatabaseDTO> createDatabase(CreateDbDTO createDbDTO) {
-        CustomerDatabaseDTO dto = databaseService.createDatabase(createDbDTO.getUserId(), createDbDTO.getDbName(), createDbDTO.getPassword(), createDbDTO.getPassword());
+        CustomerDatabaseDTO dto = databaseService.createDatabase(createDbDTO.getDbName(), createDbDTO.getUsername(), createDbDTO.getPassword());
         return new ResponseEntity<>(dto, HttpStatus.CREATED);
     }
 
     @Override
-    public ResponseEntity<List<CustomerDatabaseDTO>> getUserDatabases(Long userId) {
-        return ResponseEntity.ok(databaseService.getUserDatabases(userId));
+    public ResponseEntity<List<CustomerDatabaseDTO>> getUserDatabases() {
+        return ResponseEntity.ok(databaseService.getCurrentUserDatabases());
     }
 
     @Override

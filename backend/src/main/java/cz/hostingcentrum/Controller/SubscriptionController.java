@@ -17,8 +17,8 @@ public class SubscriptionController implements OrdersApi {
     private final SubscriptionService subscriptionService;
 
     @Override
-    public ResponseEntity<List<SubscriptionDto>> getAllSubscriptions(Long userId) {
-        return new ResponseEntity<>(subscriptionService.getAllSubscriptionsByUserId(userId), HttpStatus.OK);
+    public ResponseEntity<List<SubscriptionDto>> getAllSubscriptions() {
+        return new ResponseEntity<>(subscriptionService.getAllSubscriptionsForCurrentUser(), HttpStatus.OK);
     }
 
     @Override

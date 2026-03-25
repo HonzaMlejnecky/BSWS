@@ -13,7 +13,7 @@ public interface EmailService {
     void setupMail(String sender, String recipient, String subject, String text, File attachment) throws MessagingException;
 
     CreateEmailDomainDTO createDomain(CreateEmailDomainDTO dto);
-    List<EmailDomainDTO> getDomainsByUser(Long userId);
+    List<EmailDomainDTO> getCurrentUserDomains();
     void deleteDomain(Long domainId);
     EmailAccountDTO createEmailAccount(EmailAccountDTO dto);
     List<EmailAccountDTO> getAccountsByDomain(Long domainId);

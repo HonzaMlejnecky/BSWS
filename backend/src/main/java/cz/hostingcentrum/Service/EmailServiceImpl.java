@@ -17,10 +17,14 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.File;
@@ -82,7 +86,7 @@ public class EmailServiceImpl implements EmailService {
             throw new IllegalArgumentException("Doména musí končit na .com nebo .cz");
         }
 
-        User user = userRepo.findById(dto.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getCurrentUser();
         EmailDomain domain = emailMapper.toDomainEntity(dto);
         domain.setDomainName(domainName);
         domain.setUser(user);
@@ -98,8 +102,9 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public List<EmailDomainDTO> getDomainsByUser(Long userId) {
-        return emailDomainRepo.findByUserId(userId).stream().map(domain -> {
+    public List<EmailDomainDTO> getCurrentUserDomains() {
+        User user = getCurrentUser();
+        return emailDomainRepo.findByUserId(user.getId()).stream().map(domain -> {
             EmailDomainDTO dto = emailMapper.toDomainDto(domain);
             List<EmailAccountDTO> accounts = emailAccountRepo.findByEmailDomainId(domain.getId()).stream().map(emailMapper::toAccountDto).toList();
             dto.setAccounts(accounts);
@@ -110,6 +115,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void deleteDomain(Long domainId) {
         EmailDomain domain = emailDomainRepo.findById(domainId).orElseThrow();
+        ensureDomainOwner(domain);
         iredmailJdbc.update("DELETE FROM vmail.domain WHERE domain = ?", domain.getDomainName());
         emailDomainRepo.delete(domain);
     }
@@ -117,6 +123,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public EmailAccountDTO createEmailAccount(EmailAccountDTO dto) {
         EmailDomain domain = emailDomainRepo.findById(dto.getDomainId()).orElseThrow(() -> new RuntimeException("Domain not found"));
+        ensureDomainOwner(domain);
         EmailAccount acc = emailMapper.toAccountEntity(dto);
         acc.setEmailDomain(domain);
         acc.setIsActive(true);
@@ -141,6 +148,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void deleteEmailAccount(Long accountId) {
         EmailAccount acc = emailAccountRepo.findById(accountId).orElseThrow();
+        ensureDomainOwner(acc.getEmailDomain());
         iredmailJdbc.update("DELETE FROM vmail.mailbox WHERE username = ?", acc.getEmailAddress());
         emailAccountRepo.delete(acc);
     }
@@ -166,11 +174,28 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void changeEmailPassword(Long accountId, String newPassword) {
         EmailAccount acc = emailAccountRepo.findById(accountId).orElseThrow(() -> new RuntimeException("Email account not found"));
+        ensureDomainOwner(acc.getEmailDomain());
         iredmailJdbc.update("""
             UPDATE vmail.mailbox
             SET password = ?
             WHERE username = ?
         """, generateSSHA512(newPassword), acc.getEmailAddress());
         log.info("Password changed for email account: {}", acc.getEmailAddress());
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        return userRepo.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+    }
+
+    private void ensureDomainOwner(EmailDomain domain) {
+        User currentUser = getCurrentUser();
+        if (!domain.getUser().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot modify another user's email resources");
+        }
     }
 }

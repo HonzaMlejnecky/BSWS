@@ -96,15 +96,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PlanDto'
-  /api/v1/orders/user/{userId}:
+  /api/v1/orders/me:
     get:
       tags: [Orders]
       operationId: getAllSubscriptions
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema: { type: integer, format: int64 }
       responses:
         '200':
           description: Orders for user
@@ -196,15 +191,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SftpAccountDto'
-  /api/v1/sftp/accounts/user/{userId}:
+  /api/v1/sftp/accounts/me:
     get:
       tags: [Sftp]
       operationId: getSftpAccountsByUser
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema: { type: integer, format: int64 }
       responses:
         '200':
           description: User SFTP accounts
@@ -242,15 +232,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateEmailDomainDTO'
-  /api/v1/email/domains/user/{userId}:
+  /api/v1/email/domains/me:
     get:
       tags: [Email]
       operationId: getDomainsByUser
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema: { type: integer, format: int64 }
       responses:
         '200':
           description: User domains
@@ -346,15 +331,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CustomerDatabaseDTO'
-  /api/v1/databases/user/{userId}:
+  /api/v1/databases/me:
     get:
       tags: [Database]
       operationId: getUserDatabases
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema: { type: integer, format: int64 }
       responses:
         '200':
           description: User DBs

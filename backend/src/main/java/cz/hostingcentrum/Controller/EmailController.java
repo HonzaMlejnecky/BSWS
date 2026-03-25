@@ -25,8 +25,8 @@ public class EmailController implements EmailApi {
     }
 
     @Override
-    public ResponseEntity<List<EmailDomainDTO>> getDomainsByUser(Long userId) {
-        return ResponseEntity.ok(service.getDomainsByUser(userId));
+    public ResponseEntity<List<EmailDomainDTO>> getDomainsByUser() {
+        return ResponseEntity.ok(service.getCurrentUserDomains());
     }
 
     @Override
