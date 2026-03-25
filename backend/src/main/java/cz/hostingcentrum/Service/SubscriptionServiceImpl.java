@@ -31,8 +31,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     // ========================================================================
     // Get all subscriptions
     // ========================================================================
-    public List<SubscriptionDto> getAllSubscriptions() {
-        return subscriptionRepo.findAll()
+    public List<SubscriptionDto> getAllSubscriptionsByUserId(Long userId) {
+        return subscriptionRepo.findByUserId(userId)
                 .stream()
                 .map(SubscriptionDto::fromEntity)
                 .collect(Collectors.toList());
@@ -58,13 +58,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Optional<User> userOpt = userRepo.findByEmail(authentication.getName());
         Optional<Plan> planOpt = planRepo.findById(plan);
 
-        if (userOpt.isEmpty() || planOpt.isEmpty()) {
-            throw new IllegalArgumentException("User or Plan not found");
+        if (userOpt.isEmpty()) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        if (planOpt.isEmpty()){
+            throw new IllegalArgumentException("Plan not found");
         }
 
         Subscription subscription = new Subscription();
         subscription.setUser(userOpt.get());
         subscription.setPlan(planOpt.get());
+        subscription.setPricePaid(planOpt.get().getPriceMonthly());
+        subscription.setCreatedAt(LocalDateTime.now());
+        subscription.setUpdatedAt(LocalDateTime.now());
+        subscription.setStatus(SubscriptionStatus.active);
         subscription.setOrderNumber(
                 "ORD-" +
                         LocalDate.now().getYear() + "-" +
@@ -90,12 +98,5 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         subscription.setStatus(status);
         Subscription updated = subscriptionRepo.save(subscription);
         return SubscriptionDto.fromEntity(updated);
-    }
-
-    // ========================================================================
-    // Delete subscription
-    // ========================================================================
-    public void deleteSubscription(Long id) {
-        subscriptionRepo.deleteById(id);
     }
 }

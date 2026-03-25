@@ -107,17 +107,26 @@ CREATE TABLE IF NOT EXISTS customer_databases (
     INDEX idx_custdb_name (db_name)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE email_domains (
+   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+   domain_name VARCHAR(255) NOT NULL UNIQUE,
+   user_id BIGINT NOT NULL,
+   is_active BOOLEAN DEFAULT TRUE,
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- EMAIL ACCOUNTS
 CREATE TABLE IF NOT EXISTS email_accounts (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id         BIGINT NOT NULL,
     email_address   VARCHAR(255) NOT NULL UNIQUE,
     is_active       BOOLEAN DEFAULT TRUE,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_login_at   TIMESTAMP NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_email_user (user_id),
+    domain_id       BIGINT NOT NULL,
+    FOREIGN KEY (domain_id) REFERENCES email_domains(id) ON DELETE CASCADE,
     INDEX idx_email_address (email_address)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

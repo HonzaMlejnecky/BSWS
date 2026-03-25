@@ -36,7 +36,8 @@ public class Security {
         return http.csrf(AbstractHttpConfigurer::disable).
                 cors(customizer -> customizer.configurationSource(corsConfigurationSource())).
                 authorizeHttpRequests(request -> request
-                        .requestMatchers("/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/api/v1/plans/**", "/actuator/health","/swagger-ui/**","/v3/api-docs/**").permitAll()
+                        .anyRequest().authenticated()
                 ).
                 sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

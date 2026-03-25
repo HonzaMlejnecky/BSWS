@@ -1,5 +1,6 @@
 package cz.hostingcentrum.Controller;
 
+import cz.hostingcentrum.DTO.SftpAccChangePassDTO;
 import cz.hostingcentrum.DTO.SftpAccountDto;
 import cz.hostingcentrum.Interface.SftpAccountService;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,13 @@ public class SftpAccountController {
 
     private final SftpAccountService service;
 
-    @PostMapping
+    @PostMapping("/update-password")
+    public ResponseEntity<String> updatePassword(@RequestBody SftpAccChangePassDTO dto) {
+        service.updateSftpPassword(dto.getAccountId(), dto.getNewPassword());
+        return ResponseEntity.ok("Password updated successfully");
+    }
+
+    @PostMapping("/create")
     public ResponseEntity<SftpAccountDto> create(@RequestBody SftpAccountDto dto) throws IOException, InterruptedException {
         return new ResponseEntity<>(service.createSftpAccount(dto), HttpStatus.CREATED);
     }

@@ -9,5 +9,6 @@ public interface SftpAccountService {
     void deleteSftpAccount(Long id);
     SftpAccountDto createSftpAccount(SftpAccountDto dto) throws IOException, InterruptedException;
     List<SftpAccountDto> getUserSftpAccounts(Long userId);
+    void updateSftpPassword(Long accountId, String newPassword);
 
 }
