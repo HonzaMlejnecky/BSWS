@@ -1,0 +1,542 @@
+openapi: 3.0.3
+info:
+  title: HostingCentrum API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8083
+paths:
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDto'
+      responses:
+        '200':
+          description: JWT token
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDto'
+      responses:
+        '200':
+          description: Registration status
+  /api/v1/plans:
+    get:
+      tags: [Plans]
+      operationId: getAllPlans
+      responses:
+        '200':
+          description: Plans list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlanDto'
+  /api/v1/plans/{id}:
+    get:
+      tags: [Plans]
+      operationId: getPlanById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Plan detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanDto'
+  /api/v1/plans/code/{code}:
+    get:
+      tags: [Plans]
+      operationId: getPlanByCode
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Plan detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanDto'
+  /api/v1/orders/me:
+    get:
+      tags: [Orders]
+      operationId: getAllSubscriptions
+      responses:
+        '200':
+          description: Orders for user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubscriptionDto'
+  /api/v1/orders/{id}:
+    get:
+      tags: [Orders]
+      operationId: getSubscription
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionDto'
+  /api/v1/orders:
+    post:
+      tags: [Orders]
+      operationId: createSubscription
+      parameters:
+        - in: query
+          name: plan
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '201':
+          description: Created order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionDto'
+  /api/v1/orders/{id}/status:
+    put:
+      tags: [Orders]
+      operationId: updateStatus
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+        - in: query
+          name: status
+          required: true
+          schema:
+            $ref: '#/components/schemas/SubscriptionStatus'
+      responses:
+        '200':
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionDto'
+  /api/v1/sftp/accounts/password:
+    post:
+      tags: [Sftp]
+      operationId: updateSftpPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SftpAccChangePassDTO'
+      responses:
+        '200': { description: Password changed }
+  /api/v1/sftp/accounts:
+    post:
+      tags: [Sftp]
+      operationId: createSftpAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SftpAccountDto'
+      responses:
+        '201':
+          description: Created account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SftpAccountDto'
+  /api/v1/sftp/accounts/me:
+    get:
+      tags: [Sftp]
+      operationId: getSftpAccountsByUser
+      responses:
+        '200':
+          description: User SFTP accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SftpAccountDto'
+  /api/v1/sftp/accounts/{id}:
+    delete:
+      tags: [Sftp]
+      operationId: deleteSftpAccount
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204': { description: Deleted }
+  /api/v1/email/domains:
+    post:
+      tags: [Email]
+      operationId: createDomain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEmailDomainDTO'
+      responses:
+        '201':
+          description: Created domain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateEmailDomainDTO'
+  /api/v1/email/domains/me:
+    get:
+      tags: [Email]
+      operationId: getDomainsByUser
+      responses:
+        '200':
+          description: User domains
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmailDomainDTO'
+  /api/v1/email/domains/{id}:
+    delete:
+      tags: [Email]
+      operationId: deleteDomain
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204': { description: Deleted }
+  /api/v1/email/accounts:
+    post:
+      tags: [Email]
+      operationId: createAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailAccountDTO'
+      responses:
+        '201':
+          description: Created account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailAccountDTO'
+  /api/v1/email/accounts/domain/{domainId}:
+    get:
+      tags: [Email]
+      operationId: getAccountsByDomain
+      parameters:
+        - in: path
+          name: domainId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Domain mailboxes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmailAccountDTO'
+  /api/v1/email/accounts/{id}:
+    delete:
+      tags: [Email]
+      operationId: deleteAccount
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204': { description: Deleted }
+  /api/v1/email/accounts/password:
+    post:
+      tags: [Email]
+      operationId: changeEmailPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeEmailPasswordDTO'
+      responses:
+        '200': { description: Password changed }
+  /api/v1/databases:
+    post:
+      tags: [Database]
+      operationId: createDatabase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDbDTO'
+      responses:
+        '201':
+          description: Created DB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerDatabaseDTO'
+  /api/v1/databases/me:
+    get:
+      tags: [Database]
+      operationId: getUserDatabases
+      responses:
+        '200':
+          description: User DBs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerDatabaseDTO'
+  /api/v1/databases/{dbId}:
+    delete:
+      tags: [Database]
+      operationId: deleteDatabase
+      parameters:
+        - in: path
+          name: dbId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204': { description: Deleted }
+  /api/v1/databases/password:
+    post:
+      tags: [Database]
+      operationId: updateDatabasePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePassDbDTO'
+      responses:
+        '200': { description: Password changed }
+  /api/v1/projects:
+    post:
+      tags: [Project]
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectDTO'
+      responses:
+        '201':
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDTO'
+  /api/v1/projects/me:
+    get:
+      tags: [Project]
+      operationId: getCurrentUserProjects
+      responses:
+        '200':
+          description: User projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectDTO'
+  /api/v1/projects/{projectId}:
+    get:
+      tags: [Project]
+      operationId: getProjectDetail
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Project detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDTO'
+    delete:
+      tags: [Project]
+      operationId: deleteProject
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204': { description: Deleted }
+  /api/v1/projects/{projectId}/files:
+    get:
+      tags: [Project]
+      operationId: listProjectFiles
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Files in project webroot
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectFileDto'
+    post:
+      tags: [Project]
+      operationId: uploadProjectFile
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Uploaded file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectFileDto'
+  /api/v1/projects/{projectId}/publish:
+    post:
+      tags: [Project]
+      operationId: publishProject
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Published project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDTO'
+  /api/v1/projects/{projectId}/redeploy:
+    post:
+      tags: [Project]
+      operationId: redeployProject
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Redeployed project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDTO'
+components:
+  schemas:
+    LoginDto:
+      type: object
+      additionalProperties: false
+    RegisterDto:
+      type: object
+      additionalProperties: false
+    PlanDto:
+      type: object
+      additionalProperties: false
+    SubscriptionDto:
+      type: object
+      additionalProperties: false
+    SftpAccountDto:
+      type: object
+      additionalProperties: false
+    SftpAccChangePassDTO:
+      type: object
+      additionalProperties: false
+    EmailAccountDTO:
+      type: object
+      additionalProperties: false
+    EmailDomainDTO:
+      type: object
+      additionalProperties: false
+    CreateEmailDomainDTO:
+      type: object
+      additionalProperties: false
+    ChangeEmailPasswordDTO:
+      type: object
+      additionalProperties: false
+    CreateDbDTO:
+      type: object
+      additionalProperties: false
+    CustomerDatabaseDTO:
+      type: object
+      additionalProperties: false
+    ChangePassDbDTO:
+      type: object
+      additionalProperties: false
+    CreateProjectDTO:
+      type: object
+      additionalProperties: false
+    ProjectDTO:
+      type: object
+      additionalProperties: false
+    ProjectFileDto:
+      type: object
+      properties:
+        name:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+    SubscriptionStatus:
+      type: string
+      enum: [active, suspended, cancelled]

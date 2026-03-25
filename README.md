@@ -1,201 +1,120 @@
-# Hostingove centrum BSWS
+# Hostingové centrum
 
-Semestralni prace — hostingove centrum postavene na Dockeru.
+Semestrální projekt „Hostingové centrum“ ve virtuálním prostředí. Systém pokrývá kompletní workflow:
 
----
-
-## Zacni zde
-
-| Jsem... | Precti si |
-|---------|-----------|
-| **Novy v projektu** | [docs/JAK-PRACOVAT.md](docs/JAK-PRACOVAT.md) |
-| **Chci vedet co je hotovo** | [docs/ZADANI-STAV.md](docs/ZADANI-STAV.md) |
-| **Pracuji s databazi** | [docs/PRACE-S-DATABAZI.md](docs/PRACE-S-DATABAZI.md) |
+**registrace → login → výběr plánu → vytvoření projektu → provisioning → upload obsahu (FTP nebo přes aplikaci) → publikace webu na doméně**.
 
 ---
 
-## Rychly start
+## 1) Scope projektu
 
+Projekt implementuje funkční hostingové centrum pro statické weby:
+- uživatelské účty (registrace/login),
+- výběr a aktivace hostingového plánu,
+- více projektů na uživatele,
+- oddělené webrooty projektů,
+- mapování domény na webroot přes Apache VirtualHost,
+- FTP přístupové údaje na detailu projektu,
+- přímý upload souborů přes aplikaci,
+- databáze MariaDB pro perzistenci.
+
+Mimo scope zůstává komerční billing engine a plnohodnotný mailhosting stack.
+
+---
+
+## 2) Hostingové plány
+
+Aplikace pracuje se třemi aktivními plány:
+- **Basic** – 1 projekt, základní publikace, FTP přístup,
+- **Standard** – více projektů, vyšší limity, FTP + upload přes aplikaci,
+- **Premium** – nejvyšší limity, rozšířené parametry pro náročnější weby.
+
+Plán je uložen do subscription a při vytváření projektu se propisuje do metadat projektu.
+
+---
+
+## 3) Architektura
+
+Hlavní entity:
+- `User`
+- `Plan`
+- `Subscription`
+- `Project` (doména, webroot, stav, FTP údaje)
+
+Stavy projektu:
+- `provisioning`
+- `active`
+- `failed`
+
+Každý projekt má vlastní webroot a samostatnou doménu.
+
+---
+
+## 4) Spuštění projektu
+
+### Požadavky
+- Docker + Docker Compose
+- Linux/macOS/WSL doporučeno
+
+### Start
 ```bash
-# 1. Klonuj a prejdi do slozky
-git clone <url>
-cd BSWS
-
-# 2. Spust (automaticky vytvori .env)
-./scripts/start.sh          # Mac/Linux
-.\scripts\start.ps1         # Windows PowerShell
-# nebo: make start
-
-# 3. Otevri http://localhost
+docker compose up -d --build
 ```
 
-## Aktualizace (po pullnuti zmen od kolegu)
+### Důležité endpointy
+- Frontend: `http://localhost`
+- Backend API: `http://localhost:8080`
+- Swagger: `http://localhost:8080/swagger-ui/index.html`
 
-```bash
-./scripts/update.sh         # Mac/Linux
-.\scripts\update.ps1        # Windows PowerShell
-# nebo: make update
+---
+
+## 5) Apache provisioning workflow
+
+Backend při vytvoření projektu:
+1. vytvoří webroot v `/srv/customers/user_<id>/<slug>/www`,
+2. vytvoří/aktualizuje Apache vhost v adresáři `/srv/apache/vhosts.d`,
+3. provede validační a reload command (konfigurovatelné přes env),
+4. nastaví stav projektu na `active`.
+
+Apache načítá zákaznické vhosty přes:
+```apache
+IncludeOptional conf/extra/vhosts.d/*.conf
 ```
 
-Skript automaticky detekuje co se zmenilo a provede spravne akce (rebuild, restart, reset DB...).
+V Docker Compose je složka vhostů sdílená mezi `backend` a `web` službou přes bind mount `./web/apache-config/vhosts.d`.
 
-**Otevri v prohlizeci:**
-- http://localhost - hlavni web
-- http://localhost:8080 - backend API
+---
 
-## Architektura
+## 6) Upload obsahu
 
-```
-Prohlizec
-    |
-    v
-Apache (:80) ─── reverse proxy ───> Spring Boot (:8080) ──> MariaDB (:3307)
-    |
-    +── servuje zakaznicke weby z /srv/customers/{user}/www
+Projekt podporuje dvě cesty:
+1. **FTP upload** do webrootu projektu,
+2. **Upload přes aplikaci** na detailu projektu (`/projects/:id`).
 
-FTP (:21) ──> /srv/customers/{user}/
-Mailpit (:8025 web, :1025 SMTP)
-```
+Přímý upload validuje název souboru a ukládá pouze do webrootu konkrétního projektu.
 
-## Sluzby
+---
 
-| Sluzba | Kontejner | Port | Stav |
-|--------|-----------|------|------|
-| Apache (proxy) | `hc-web` | 80 | Aktivni |
-| Spring Boot | `hc-backend` | 8080 | Aktivni |
-| MariaDB | `hc-db` | 3307 | Aktivni |
-| FTP | `hc-ftp` | 21 | Zakomentovano |
-| Mail | `hc-mail` | 8025 | Zakomentovano |
+## 7) Veřejná část aplikace
 
-## Pristupy
+Landing page je dostupná na `/` a obsahuje:
+- představení služby,
+- přehled plánů,
+- CTA na registraci a přihlášení.
 
-| Co | Kde | Udaje |
-|----|-----|-------|
-| API | http://localhost:8080 | — |
-| Web | http://localhost | — |
-| Databaze | localhost:3307 | `platform_user` / `platformpass123` |
+Po přihlášení uživatel pracuje v interní části (dashboard, projektový detail, plán).
 
-## Prikazy
+---
 
-### Pomoci skriptu (doporuceno)
+## 8) Ověřovací scénář
 
-| Akce | Mac/Linux | Windows | Make |
-|------|-----------|---------|------|
-| Prvni spusteni | `./scripts/start.sh` | `.\scripts\start.ps1` | `make start` |
-| Aktualizace | `./scripts/update.sh` | `.\scripts\update.ps1` | `make update` |
-| Zastavit | - | - | `make stop` |
-| Reset DB | - | - | `make reset` |
-| Logy | - | - | `make logs` |
-| Pripojit k DB | - | - | `make db` |
-
-### Rucne (docker compose)
-
-```bash
-docker compose up -d              # Spustit
-docker compose up -d --build      # Spustit + rebuild
-docker compose down               # Zastavit
-docker compose down -v            # Zastavit + smazat DB
-docker compose logs -f            # Logy
-docker compose logs -f backend    # Logy backendu
-docker compose restart web        # Restart Apache
-docker compose ps                 # Stav kontejneru
-```
-
-### Databaze
-
-```bash
-# Pripojit se
-docker exec -it hc-db mariadb -u platform_user -pplatformpass123 hosting_platform
-
-# Uvnitr: SHOW TABLES; SELECT * FROM users; exit;
-```
-
-## Konflikt portu?
-
-Uprav v `.env`:
-```bash
-WEB_PORT=8000        # misto 80
-BACKEND_PORT=8081    # misto 8080
-DB_PORT=3308         # misto 3307
-```
-
-## Dokumentace
-
-### Jak pracovat s projektem
-| Dokument | Popis |
-|----------|-------|
-| [docs/JAK-PRACOVAT.md](docs/JAK-PRACOVAT.md) | **Blbuvzdorny navod pro vsechny** |
-| [docs/PRACE-S-DATABAZI.md](docs/PRACE-S-DATABAZI.md) | Flyway migrace, backup, reseni problemu |
-| [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) | Detailni technicka dokumentace |
-
-### Stav projektu a ukoly
-| Dokument | Popis |
-|----------|-------|
-| [docs/ZADANI-STAV.md](docs/ZADANI-STAV.md) | **Co je hotovo a co zbyva** |
-| [docs/ROZDELENI-PRACE.md](docs/ROZDELENI-PRACE.md) | Kdo co dela |
-| [docs/UKOLY-BACKEND.md](docs/UKOLY-BACKEND.md) | Ukoly pro tym Backend |
-| [docs/UKOLY-FRONTEND.md](docs/UKOLY-FRONTEND.md) | Ukoly pro tym Frontend |
-| [docs/UKOLY-DATABAZE.md](docs/UKOLY-DATABAZE.md) | Ukoly pro tym Databaze |
-| [docs/UKOLY-WEBSERVER.md](docs/UKOLY-WEBSERVER.md) | Ukoly pro tym Webserver |
-| [docs/UKOLY-FTP.md](docs/UKOLY-FTP.md) | Ukoly pro tym FTP |
-| [docs/UKOLY-MAIL.md](docs/UKOLY-MAIL.md) | Ukoly pro tym Mail |
-
-## Struktura projektu
-
-```
-BSWS/
-├── docker-compose.yml      # Orchestrace
-├── .env.example            # Sablona konfigurace
-├── backend/                # Spring Boot
-├── frontend/               # React/Next.js (prazdne)
-├── web/                    # Apache config
-├── db/                     # SQL skripty
-├── ftp/                    # FTP config
-├── mail/                   # Mail config
-├── customers/              # Zakaznicke weby
-└── docs/                   # Dokumentace
-```
-
-## Licence
-
-| Produkt | Licence |
-|---------|---------|
-| Apache HTTP Server | Apache License 2.0 |
-| Spring Boot | Apache License 2.0 |
-| MariaDB | GPL v2 |
-| Pure-FTPd | BSD |
-| Mailpit | MIT |
-| Docker | Apache License 2.0 |
-
-
-## SFTP 
-- http://localhost:8084/
-- http://sftp.local
-
-## WEB
--  http://frontend.local
-
-## BACKEND
-- http://localhost:8083/swagger-ui/index.html
-- http://api.local/swagger-ui/index.html
-
-## MAIL
-- https://localhost/mail/
-- https://mail.local/mail/
-- https://localhost/iredadmin/
-- https://mail.local/iredadmin/
-
-## PHPMYADMIN
-- http://localhost:8081/
-- http://dbadmin.local/index.php
-
-
-## Nastavení
-Pro správné fungování je potřeba pro dbadmin.local, frontend.local, mail.local, sftp.local, api.local
-nastavit v "C:\Windows\System32\drivers\etc\hosts" (Windows) nebo "/etc/hosts" (Linux/Mac) tyto záznamy (daný sobour musíte otevřít jako správce, aby šel uložit): 
-
-127.0.0.1 dbadmin.local
-127.0.0.1 frontend.local
-127.0.0.1 mail.local
-127.0.0.1 sftp.local
-127.0.0.1 dbadmin.local
+1. Otevřít veřejnou landing page.
+2. Registrovat uživatele.
+3. Přihlásit se.
+4. Vybrat jeden ze 3 plánů.
+5. Vytvořit projekt.
+6. Ověřit, že provisioning vytvořil webroot i vhost config.
+7. Nahrát `index.html` přes FTP.
+8. Nahrát `index.html` přes aplikaci.
+9. Ověřit publikovaný obsah na doméně.
+10. Vytvořit další projekt a ověřit oddělení dat.

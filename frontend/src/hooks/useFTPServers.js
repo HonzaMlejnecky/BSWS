@@ -1,32 +1,43 @@
-import { useState } from "react";
+import { useEffect, useState } from 'react';
+import { sftpApi } from '../api/generatedClient';
 
 export default function useFTPServers() {
-    const [ftpServers, setFtpServers] = useState([
-        {
-            id: "1",
-            domain: "example.com",
-            rootDir: "/var/www/example",
-            accounts: [
-                { id: "a1", username: "ftpuser", password: "123456" },
-                { id: "a2", username: "backup", password: "123456" }
-            ]
-        }
-    ]);
+  const [ftpServers, setFtpServers] = useState([]);
 
-    const createServer = (newServer) => setFtpServers(prev => [...prev, newServer]);
-    const deleteServer = (id) => setFtpServers(prev => prev.filter(s => s.id !== id));
-    
-    const addAccount = (server, account) => {
-        setFtpServers(prev => prev.map(s => s.id === server.id ? { ...s, accounts: [...s.accounts, account] } : s));
-    };
-    
-    const deleteAccount = (serverId, accountId) => {
-        setFtpServers(prev => prev.map(s => s.id === serverId ? { ...s, accounts: s.accounts.filter(a => a.id !== accountId) } : s));
-    };
+  const reload = () => sftpApi.getMine().then((accounts) => {
+    setFtpServers((accounts || []).map((a) => ({
+      id: String(a.id),
+      domain: a.username,
+      rootDir: a.homeDirectory,
+      accounts: [{ id: String(a.id), username: a.username, password: '' }],
+    })));
+  }).catch(() => setFtpServers([]));
 
-    const changePassword = (account, serverId, newPassword) => {
-        setFtpServers(prev => prev.map(s => s.id === serverId ? { ...s, accounts: s.accounts.map(a => a.id === account.id ? { ...a, password: newPassword } : a) } : s));
-    };
+  useEffect(() => { reload(); }, []);
 
-    return { ftpServers, createServer, deleteServer, addAccount, deleteAccount, changePassword };
+  const createServer = async (newServer) => {
+    await sftpApi.create({ username: newServer.domain, homeDirectory: newServer.rootDir, password: newServer.password || 'ChangeMe123!' });
+    await reload();
+  };
+
+  const deleteServer = async (id) => {
+    await sftpApi.remove(id);
+    await reload();
+  };
+
+  const addAccount = async (server, account) => {
+    await sftpApi.create({ username: account.username, homeDirectory: server.rootDir, password: account.password });
+    await reload();
+  };
+
+  const deleteAccount = async (_serverId, accountId) => {
+    await sftpApi.remove(accountId);
+    await reload();
+  };
+
+  const changePassword = async (account, _serverId, newPassword) => {
+    await sftpApi.changePassword({ accountId: Number(account.id), newPassword });
+  };
+
+  return { ftpServers, createServer, deleteServer, addAccount, deleteAccount, changePassword };
 }

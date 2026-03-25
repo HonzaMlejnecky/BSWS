@@ -149,8 +149,7 @@ ftp localhost
 
 | Funkce | Endpoint | Popis |
 |--------|----------|-------|
-| Registrace | POST /api/v1/auth/register | Vytvori ucet, posle email |
-| Verifikace | GET /api/v1/auth/verify/email | Overi email |
+| Registrace | POST /api/v1/auth/register | Vytvori ucet (okamzite aktivni, bez email verifikace) |
 | Prihlaseni | POST /api/v1/auth/login | Vrati JWT token |
 | Seznam tarifu | GET /api/v1/plans | Vrati aktivni tarify |
 | Detail tarifu | GET /api/v1/plans/{id} | Detail tarifu |

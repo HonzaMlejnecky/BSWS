@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-function BaseModal({ open, onClose, title, subtitle, children }) {
+function BaseModal({ open, title, subtitle, children }) {
     if (!open) return null;
 
     return (
