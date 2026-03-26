@@ -10,19 +10,43 @@ export const authApi = {
   login: (payload) => apiClient.post('/api/v1/auth/login', payload),
 };
 
+export const plansApi = {
+  getAll: () => apiClient.get('/api/v1/plans'),
+  getById: (id) => apiClient.get(`/api/v1/plans/${id}`),
+};
+
 export const ordersApi = {
-  getByUser: (userId) => apiClient.get(`/api/v1/orders/user/${userId}`),
+  getMine: () => apiClient.get('/api/v1/orders/me'),
+  getById: (id) => apiClient.get(`/api/v1/orders/${id}`),
+  create: (planId) => apiClient.post(`/api/v1/orders?plan=${planId}`),
+  updateStatus: (id, status) => apiClient.put(`/api/v1/orders/${id}/status?status=${status}`),
+};
+
+export const projectsApi = {
+  getByUser: (userId) => apiClient.get(`/api/v1/projects/user/${userId}`),
+  create: (payload) => apiClient.post('/api/v1/projects', payload),
+  remove: (projectId) => apiClient.delete(`/api/v1/projects/${projectId}`),
+  publish: (projectId) => apiClient.post(`/api/v1/projects/${projectId}/publish`),
+  redeploy: (projectId) => apiClient.post(`/api/v1/projects/${projectId}/redeploy`),
+};
+
+export const databaseApi = {
+  getMine: () => apiClient.get('/api/v1/databases/me'),
+  create: (payload) => apiClient.post('/api/v1/databases', payload),
+  remove: (id) => apiClient.delete(`/api/v1/databases/${id}`),
+  changePassword: (payload) => apiClient.post('/api/v1/databases/password', payload),
 };
 
 export const sftpApi = {
-  getByUser: (userId) => apiClient.get(`/api/v1/sftp/accounts/user/${userId}`),
+  getMine: () => apiClient.get('/api/v1/sftp/accounts/me'),
   create: (payload) => apiClient.post('/api/v1/sftp/accounts', payload),
   remove: (id) => apiClient.delete(`/api/v1/sftp/accounts/${id}`),
   changePassword: (payload) => apiClient.post('/api/v1/sftp/accounts/password', payload),
 };
 
 export const emailApi = {
-  getDomainsByUser: (userId) => apiClient.get(`/api/v1/email/domains/user/${userId}`),
+  getDomainsByUser: () => apiClient.get('/api/v1/email/domains/me'),
+  getAccountsByDomain: (domainId) => apiClient.get(`/api/v1/email/accounts/domain/${domainId}`),
   createDomain: (payload) => apiClient.post('/api/v1/email/domains', payload),
   removeDomain: (id) => apiClient.delete(`/api/v1/email/domains/${id}`),
   createAccount: (payload) => apiClient.post('/api/v1/email/accounts', payload),

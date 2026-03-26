@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { emailApi } from '../api/generatedClient';
-import { useAuth } from '../context/AuthContext';
 
 export default function useEmailServers() {
-  const { userId } = useAuth();
   const [emailServers, setEmailServers] = useState([]);
 
-  const reload = () => emailApi.getDomainsByUser(userId)
+  const reload = () => emailApi.getDomainsByUser()
     .then((domains) => {
       setEmailServers((domains || []).map((domain) => ({
         id: String(domain.id),
@@ -18,10 +16,10 @@ export default function useEmailServers() {
     })
     .catch(() => setEmailServers([]));
 
-  useEffect(() => { reload(); }, [userId]);
+  useEffect(() => { reload(); }, []);
 
   const createServer = async (newServer) => {
-    await emailApi.createDomain({ domainName: newServer.domain, userId });
+    await emailApi.createDomain({ domainName: newServer.domain });
     await reload();
   };
 
