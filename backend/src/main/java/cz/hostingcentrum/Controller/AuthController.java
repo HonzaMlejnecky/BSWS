@@ -4,26 +4,30 @@ import cz.hostingcentrum.DTO.LoginDto;
 import cz.hostingcentrum.DTO.RegisterDto;
 import cz.hostingcentrum.Model.User;
 import cz.hostingcentrum.Service.UserServiceImpl;
-import cz.hostingcentrum.generated.api.AuthApi;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 
 @RestController
 @RequiredArgsConstructor
-public class AuthController implements AuthApi {
+public class AuthController {
 
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private final UserServiceImpl userServiceImpl;
 
-    @Override
-    public ResponseEntity<String> login(LoginDto authDTO) {
+    @PostMapping("/api/v1/auth/login")
+    public ResponseEntity<String> login(@Valid @RequestBody LoginDto authDTO) {
         log.debug("Login attempt for email: {}", authDTO.getEmail());
         User user = userServiceImpl.findByEmail(authDTO.getEmail());
         if (user != null && user.getCode() != null) {
@@ -39,15 +43,15 @@ public class AuthController implements AuthApi {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
     }
 
-    @Override
-    public ResponseEntity<Void> register(RegisterDto authDto) {
+    @PostMapping("/api/v1/auth/register")
+    public ResponseEntity<Void> register(@Valid @RequestBody RegisterDto authDto) {
         log.debug("Registration attempt for email: {}", authDto.getEmail());
         userServiceImpl.register(authDto);
         return ResponseEntity.ok().build();
     }
 
-    @Override
-    public ResponseEntity<Void> verifyEmail(String code, String email) {
+    @GetMapping("/api/v1/auth/verify/email")
+    public ResponseEntity<Void> verifyEmail(@RequestParam String code, @RequestParam String email) {
         boolean isVerified = userServiceImpl.verifyEmail(email, code);
         if (isVerified) {
             HttpHeaders headers = new HttpHeaders();

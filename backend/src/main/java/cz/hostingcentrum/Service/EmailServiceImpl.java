@@ -45,6 +45,7 @@ public class EmailServiceImpl implements EmailService {
     private final JdbcTemplate iredmailJdbc;
     private final UserRepo userRepo;
     private final EmailMapper emailMapper;
+
     @Value("${app.verification.base-url:http://localhost:8080}")
     private String verificationBaseUrl;
 
@@ -64,7 +65,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void registationMail(String email, String code) {
         String verificationUrl = UriComponentsBuilder
-                .fromHttpUrl(verificationBaseUrl)
+                .fromUriString(verificationBaseUrl)
                 .path("/api/v1/auth/verify/email")
                 .queryParam("code", code)
                 .queryParam("email", email)

@@ -447,21 +447,51 @@ paths:
                 $ref: '#/components/schemas/ProjectDTO'
 components:
   schemas:
-    LoginDto: { type: object }
-    RegisterDto: { type: object }
-    PlanDto: { type: object }
-    SubscriptionDto: { type: object }
-    SftpAccountDto: { type: object }
-    SftpAccChangePassDTO: { type: object }
-    EmailAccountDTO: { type: object }
-    EmailDomainDTO: { type: object }
-    CreateEmailDomainDTO: { type: object }
-    ChangeEmailPasswordDTO: { type: object }
-    CreateDbDTO: { type: object }
-    CustomerDatabaseDTO: { type: object }
-    ChangePassDbDTO: { type: object }
-    CreateProjectDTO: { type: object }
-    ProjectDTO: { type: object }
+    LoginDto:
+      type: object
+      additionalProperties: false
+    RegisterDto:
+      type: object
+      additionalProperties: false
+    PlanDto:
+      type: object
+      additionalProperties: false
+    SubscriptionDto:
+      type: object
+      additionalProperties: false
+    SftpAccountDto:
+      type: object
+      additionalProperties: false
+    SftpAccChangePassDTO:
+      type: object
+      additionalProperties: false
+    EmailAccountDTO:
+      type: object
+      additionalProperties: false
+    EmailDomainDTO:
+      type: object
+      additionalProperties: false
+    CreateEmailDomainDTO:
+      type: object
+      additionalProperties: false
+    ChangeEmailPasswordDTO:
+      type: object
+      additionalProperties: false
+    CreateDbDTO:
+      type: object
+      additionalProperties: false
+    CustomerDatabaseDTO:
+      type: object
+      additionalProperties: false
+    ChangePassDbDTO:
+      type: object
+      additionalProperties: false
+    CreateProjectDTO:
+      type: object
+      additionalProperties: false
+    ProjectDTO:
+      type: object
+      additionalProperties: false
     SubscriptionStatus:
       type: string
       enum: [active, suspended, cancelled]
