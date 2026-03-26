@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const AuthModal = ({ isOpen, onClose, initialLoginMode }) => {
+const AuthModal = ({ isOpen, onClose, initialLoginMode, redirectTo = '/dashboard' }) => {
   const { login, register } = useAuth();
+  const navigate = useNavigate();
   const [isLoginMode, setIsLoginMode] = useState(initialLoginMode);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ email: '', password: '', confirmPassword: '', username: '' });
@@ -32,6 +34,7 @@ const AuthModal = ({ isOpen, onClose, initialLoginMode }) => {
       if (isLoginMode) {
         await login({ email: form.email, password: form.password });
         onClose();
+        navigate(redirectTo, { replace: true });
       } else {
         if (form.password !== form.confirmPassword) throw new Error('Hesla se neshodují.');
         await register({ email: form.email, password: form.password, username: form.username || form.email.split('@')[0] });
