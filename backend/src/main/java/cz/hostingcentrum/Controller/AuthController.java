@@ -7,16 +7,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.net.URI;
 
 @RestController
 @RequiredArgsConstructor
@@ -42,16 +37,5 @@ public class AuthController {
         log.debug("Registration attempt for email: {}", authDto.getEmail());
         userServiceImpl.register(authDto);
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/api/v1/auth/verify/email")
-    public ResponseEntity<Void> verifyEmail(@RequestParam String code, @RequestParam String email) {
-        boolean isVerified = userServiceImpl.verifyEmail(email, code);
-        if (isVerified) {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setLocation(URI.create("http://frontend.local?login=1"));
-            return new ResponseEntity<>(headers, HttpStatus.FOUND);
-        }
-        return ResponseEntity.badRequest().build();
     }
 }

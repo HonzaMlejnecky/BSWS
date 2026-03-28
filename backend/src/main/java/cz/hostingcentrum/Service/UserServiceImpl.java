@@ -3,7 +3,6 @@ package cz.hostingcentrum.Service;
 import cz.hostingcentrum.DTO.LoginDto;
 import cz.hostingcentrum.DTO.RegisterDto;
 import cz.hostingcentrum.Enum.Role;
-import cz.hostingcentrum.Config.EncryptedKeyService;
 import cz.hostingcentrum.Config.JwtService;
 import cz.hostingcentrum.Interface.UserService;
 import cz.hostingcentrum.Model.User;
@@ -18,7 +17,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +27,6 @@ public class UserServiceImpl implements UserService {
     private final UserRepo userRepo;
     private final AuthenticationManager authManager;
     private final JwtService jwtService;
-    private final EncryptedKeyService encryptedKeyService;
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
@@ -92,29 +89,5 @@ public class UserServiceImpl implements UserService {
 
         userRepo.save(user);
         log.info("User registered successfully: {}", auth.getEmail());
-    }
-
-    @Override
-    public boolean verifyEmail(String email, String code) {
-        log.debug("Verifying email for user: {}", email);
-        User user = findByEmail(email);
-
-        if (user == null || user.getCode() == null) {
-            log.warn("Email verification is not required for user: {}", email);
-            return false;
-        }
-
-        if (Objects.equals(
-                encryptedKeyService.decrypt(user.getCode()),
-                encryptedKeyService.decrypt(code))
-        ) {
-            user.setCode(null);
-            userRepo.save(user);
-            log.info("Email verified successfully for user: {}", email);
-            return true;
-        }
-
-        log.warn("Email verification failed for user: {}", email);
-        return false;
     }
 }

@@ -39,6 +39,12 @@ cd BSWS
 
 Skript automaticky detekuje co se zmenilo a provede spravne akce (rebuild, restart, reset DB...).
 
+## Autentizace (dulezita zmena)
+
+- Registrace uzivatele je **okamzite aktivni**.
+- Po `POST /api/v1/auth/register` neni potreba zadna emailova verifikace.
+- Uzivatel se muze ihned prihlasit pres `POST /api/v1/auth/login`.
+
 **Otevri v prohlizeci:**
 - http://localhost - hlavni web
 - http://localhost:8080 - backend API

@@ -212,24 +212,18 @@ make logs-web
 }
 ```
 5. Klikni "Execute"
-6. Mel bys dostat odpoved "Ucet byl uspesne dokoncen..."
-
-### Zkontrolovat email
-
-1. Otevri http://localhost:8025
-2. Uvidis zachyceny email s verifikacnim odkazem
+6. Registrace je okamzite aktivni - muzes se hned prihlasit.
 
 ### Testovat login
 
-1. Nejdriv klikni na verifikacni odkaz v emailu
-2. Pak v Swaggeru `POST /api/v1/auth/login`:
+1. Hned po registraci otevri v Swaggeru `POST /api/v1/auth/login`:
 ```json
 {
   "email": "test@test.cz",
   "password": "heslo123"
 }
 ```
-3. Dostanes JWT token (dlouhy text)
+2. Dostanes JWT token (dlouhy text)
 
 ### Testovaci ucty (uz existuji v DB)
 

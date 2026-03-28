@@ -41,7 +41,7 @@ const AuthModal = ({ isOpen, onClose, initialLoginMode, redirectTo = '/dashboard
         if (form.password !== form.confirmPassword) throw new Error('Hesla se neshodují.');
         await register({ email: form.email, password: form.password, username: form.username || form.email.split('@')[0] });
         setIsLoginMode(true);
-        setError('Registrace proběhla. Dokončete ověření e-mailu a přihlaste se.');
+        setError('Registrace proběhla, můžete se přihlásit.');
       }
     } catch (err) {
       setError(err.message || 'Autentizace selhala.');
