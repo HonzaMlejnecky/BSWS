@@ -2,18 +2,31 @@ import { useCallback, useEffect, useState } from 'react';
 import { projectsApi } from '../api/generatedClient';
 import { useAuth } from '../context/AuthContext';
 
+function mapStatus(statusRaw) {
+  const status = (statusRaw || '').toLowerCase();
+  if (status === 'published') return 'published';
+  if (status === 'failed') return 'failed';
+  return 'draft';
+}
+
 function mapProject(project) {
-  const status = (project.publicationStatus || '').toLowerCase();
+  const publicationStatus = mapStatus(project.publicationStatus);
   return {
     id: project.id,
     name: project.domain,
     domain: project.domain,
     uploadPath: project.documentRoot,
     type: project.runtime,
-    status: status === 'published' ? 'Running' : 'Deploying',
+    publicationStatus,
+    publicationError: project.provisioningError || '',
     url: `https://${project.domain}`,
     gitUrl: project.runtime === 'static' ? 'Git/static deploy' : '',
-    logs: [`Runtime: ${project.runtime}`, `Doc root: ${project.documentRoot}`, `Status: ${project.publicationStatus}`],
+    logs: [
+      `Runtime: ${project.runtime}`,
+      `Doc root: ${project.documentRoot}`,
+      `Status: ${publicationStatus}`,
+      project.provisioningError ? `Provisioning error: ${project.provisioningError}` : 'Provisioning error: none',
+    ],
   };
 }
 

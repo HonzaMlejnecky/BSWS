@@ -13,4 +13,5 @@ public class ProjectDTO {
     private String documentRoot;
     private String runtime;
     private String publicationStatus;
+    private String provisioningError;
 }

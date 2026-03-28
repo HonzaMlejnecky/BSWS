@@ -10,4 +10,5 @@ import java.util.List;
 public interface ProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByUserId(Long userId);
     long countByUserId(Long userId);
+    boolean existsByDomainIgnoreCase(String domain);
 }

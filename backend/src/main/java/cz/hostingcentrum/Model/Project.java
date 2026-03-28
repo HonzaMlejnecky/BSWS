@@ -2,6 +2,7 @@ package cz.hostingcentrum.Model;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -31,6 +32,9 @@ public class Project {
 
     @Column(name = "publication_status", nullable = false)
     private String publicationStatus;
+
+    @Column(name = "provisioning_error")
+    private String provisioningError;
 
     @Column(name = "is_active")
     private Boolean isActive;

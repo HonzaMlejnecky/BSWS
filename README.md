@@ -197,11 +197,11 @@ BSWS/
 
 
 ## Nastavení
-Pro správné fungování je potřeba pro dbadmin.local, frontend.local, mail.local, sftp.local, api.local
-nastavit v "C:\Windows\System32\drivers\etc\hosts" (Windows) nebo "/etc/hosts" (Linux/Mac) tyto záznamy (daný sobour musíte otevřít jako správce, aby šel uložit): 
+Pro správné fungování přidej do `C:\Windows\System32\drivers\etc\hosts` (Windows) nebo `/etc/hosts` (Linux/Mac) tyto test domény:
 
-127.0.0.1 dbadmin.local
-127.0.0.1 frontend.local
-127.0.0.1 mail.local
-127.0.0.1 sftp.local
-127.0.0.1 dbadmin.local
+```
+127.0.0.1 localhost frontend.local api.local dbadmin.local sftp.local mail.local
+127.0.0.1 demo-1.local demo-2.local demo-3.local
+```
+
+`demo-*.local` domény jsou určené pro test publish flow (generované Apache vhosty pro projekty).
