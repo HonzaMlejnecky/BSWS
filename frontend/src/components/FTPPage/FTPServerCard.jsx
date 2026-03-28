@@ -20,7 +20,7 @@ export default function FTPServerCard({ server, onDeleteServer, onAddAccount, on
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="font-bold text-xl">{server.domain}</h3>
-                    <p className="text-sm text-gray-500 mt-1">Root: {server.rootDir}</p>
+                    <p className="text-sm text-gray-500 mt-1">Upload path: {server.rootDir}</p>
                 </div>
                 {!confirmDelete ? (
                     <button onClick={() => setConfirmDelete(true)} className="text-red-500 text-sm font-medium hover:underline">Delete Server</button>

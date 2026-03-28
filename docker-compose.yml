@@ -180,6 +180,7 @@
       volumes:
         - sftpgodata:/srv/sftpgo
         - sftpgohome:/var/lib/sftpgo
+        - ./customers:/srv/customers
       environment:
         - SFTPGO_DATA_PROVIDER__DRIVER=sqlite
         - SFTPGO_DATA_PROVIDER__NAME=/var/lib/sftpgo/sftpgo.db

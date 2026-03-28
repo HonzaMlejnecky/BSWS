@@ -19,11 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -45,15 +43,6 @@ public class SftpAccountServiceImpl implements SftpAccountService {
         SftpAccount account = sftpAccountRepo.findById(id).orElseThrow(() -> new RuntimeException("SFTP account not found"));
         ensureAccountOwner(account);
         sftpgoApiService.deleteUser(account.getSftpUsername());
-
-        Path homeDir = Paths.get("/srv/sftpgo/data", account.getUser().getId() + "/" + account.getSftpUsername());
-        try {
-            if (Files.exists(homeDir)) {
-                Files.walk(homeDir).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to delete home directory: " + homeDir, e);
-        }
 
         sftpAccountRepo.delete(account);
     }
@@ -78,7 +67,7 @@ public class SftpAccountServiceImpl implements SftpAccountService {
             throw new RuntimeException("SFTP limit exceeded");
         }
 
-        String homeDir = "/srv/sftpgo/data/" + user.getId() + "/" + dto.getHomeDirectory();
+        String homeDir = buildCustomerWebRoot(user.getId());
         File dir = new File(homeDir);
         if (!dir.exists() && !dir.mkdirs()) {
             throw new RuntimeException("Failed to create home directory: " + homeDir);
@@ -109,5 +98,10 @@ public class SftpAccountServiceImpl implements SftpAccountService {
         if (!account.getUser().getId().equals(currentUser.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot modify another user's SFTP account");
         }
+    }
+
+    private String buildCustomerWebRoot(Long userId) {
+        Path userWebRoot = Paths.get("/srv/customers", "user_" + userId, "www");
+        return userWebRoot.toString();
     }
 }

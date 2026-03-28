@@ -16,6 +16,8 @@ export default function ProjectCard({ project, onDelete, onRedeploy }) {
                 <div>
                     <h3 className="font-bold text-lg">{project.name}</h3>
                     <a href={project.url} target="_blank" rel="noreferrer" className="text-sm text-blue-500 hover:underline">{project.url}</a>
+                    <p className="text-xs text-gray-500 mt-2">Cílová doména: <span className="font-mono">{project.domain}</span></p>
+                    <p className="text-xs text-gray-500">Upload path: <span className="font-mono">{project.uploadPath}</span></p>
                 </div>
                 <span className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full ${statusStyles[project.status]}`}>
                     {project.status}

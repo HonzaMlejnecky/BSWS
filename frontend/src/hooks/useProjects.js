@@ -7,6 +7,8 @@ function mapProject(project) {
   return {
     id: project.id,
     name: project.domain,
+    domain: project.domain,
+    uploadPath: project.documentRoot,
     type: project.runtime,
     status: status === 'published' ? 'Running' : 'Deploying',
     url: `https://${project.domain}`,
@@ -34,7 +36,6 @@ export default function useProjects() {
   const addProject = async (project) => {
     await projectsApi.create({
       domain: `${project.name.toLowerCase().replace(/\s+/g, '-')}.local`,
-      documentRoot: `/srv/customers/user_${userId}/www`,
       runtime: project.type === 'ftp' ? 'php' : 'static',
     });
     setProjects(await reload());

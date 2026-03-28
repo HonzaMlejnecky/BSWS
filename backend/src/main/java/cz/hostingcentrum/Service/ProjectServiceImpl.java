@@ -17,6 +17,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -47,12 +50,13 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         String runtime = normalizeRuntime(dto.getRuntime());
+        String documentRoot = buildDocumentRoot(user.getId());
 
         Project saved = projectRepository.save(Project.builder()
                 .user(user)
                 .projectName(dto.getDomain())
                 .domain(dto.getDomain())
-                .documentRoot(dto.getDocumentRoot())
+                .documentRoot(documentRoot)
                 .runtime(runtime)
                 .publicationStatus("draft")
                 .isActive(Boolean.TRUE)
@@ -81,6 +85,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectDTO publishProject(Long projectId) {
         Project project = getOwnedProject(projectId);
+
+        validatePublishableDocumentRoot(project);
 
         project.setPublicationStatus("published");
         project.setUpdatedAt(LocalDateTime.now());
@@ -140,5 +146,25 @@ public class ProjectServiceImpl implements ProjectService {
         }
         return userRepo.findByEmail(authentication.getName())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+    }
+
+
+    private String buildDocumentRoot(Long userId) {
+        Path webRoot = Paths.get("/srv/customers", "user_" + userId, "www");
+        return webRoot.toString();
+    }
+
+    private void validatePublishableDocumentRoot(Project project) {
+        String documentRoot = project.getDocumentRoot();
+        if (documentRoot == null || documentRoot.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Project cannot be published: document root is not configured.");
+        }
+
+        Path indexFile = Paths.get(documentRoot, "index.html");
+        if (!Files.exists(indexFile) || !Files.isRegularFile(indexFile)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Project cannot be published: missing index.html in " + documentRoot + ".");
+        }
     }
 }
