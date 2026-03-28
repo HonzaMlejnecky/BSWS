@@ -28,7 +28,7 @@ export const ordersApi = {
 };
 
 export const projectsApi = {
-  getByUser: (userId) => apiClient.get(`/api/v1/projects/user/${userId}`),
+  getMine: () => apiClient.get('/api/v1/projects/me'),
   create: (payload) => apiClient.post('/api/v1/projects', payload),
   remove: (projectId) => apiClient.delete(`/api/v1/projects/${projectId}`),
   publish: (projectId) => apiClient.post(`/api/v1/projects/${projectId}/publish`),

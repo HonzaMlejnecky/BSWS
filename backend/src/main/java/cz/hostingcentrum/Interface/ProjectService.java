@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface ProjectService {
     ProjectDTO createProject(CreateProjectDTO dto);
-    List<ProjectDTO> getUserProjects(Long userId);
+    List<ProjectDTO> getCurrentUserProjects();
     void deleteProject(Long projectId);
     ProjectDTO publishProject(Long projectId);
     ProjectDTO redeployProject(Long projectId);

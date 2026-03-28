@@ -9,8 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,9 +28,9 @@ public class ProjectController {
         return new ResponseEntity<>(project, HttpStatus.CREATED);
     }
 
-    @GetMapping("/api/v1/projects/user/{userId}")
-    public ResponseEntity<List<ProjectDTO>> getUserProjects(@PathVariable Long userId) {
-        return ResponseEntity.ok(projectService.getUserProjects(userId));
+    @GetMapping("/api/v1/projects/me")
+    public ResponseEntity<List<ProjectDTO>> getCurrentUserProjects() {
+        return ResponseEntity.ok(projectService.getCurrentUserProjects());
     }
 
     @DeleteMapping("/api/v1/projects/{projectId}")

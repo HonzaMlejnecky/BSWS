@@ -11,7 +11,11 @@ import cz.hostingcentrum.Repository.ProjectRepository;
 import cz.hostingcentrum.Repository.SubscriptionRepo;
 import cz.hostingcentrum.Repository.UserRepo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,8 +31,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectDTO createProject(CreateProjectDTO dto) {
-        User user = userRepo.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getCurrentUser();
 
         Subscription activeSub = subscriptionRepo
                 .findByUserId(user.getId())
@@ -61,8 +64,9 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public List<ProjectDTO> getUserProjects(Long userId) {
-        return projectRepository.findByUserId(userId)
+    public List<ProjectDTO> getCurrentUserProjects() {
+        User user = getCurrentUser();
+        return projectRepository.findByUserId(user.getId())
                 .stream()
                 .map(this::mapToDto)
                 .toList();
@@ -70,15 +74,13 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public void deleteProject(Long projectId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
+        Project project = getOwnedProject(projectId);
         projectRepository.delete(project);
     }
 
     @Override
     public ProjectDTO publishProject(Long projectId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
+        Project project = getOwnedProject(projectId);
 
         project.setPublicationStatus("published");
         project.setUpdatedAt(LocalDateTime.now());
@@ -89,8 +91,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectDTO redeployProject(Long projectId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
+        Project project = getOwnedProject(projectId);
 
         if (!"published".equalsIgnoreCase(project.getPublicationStatus())) {
             throw new RuntimeException("Project must be published before redeploy");
@@ -120,5 +121,24 @@ public class ProjectServiceImpl implements ProjectService {
             throw new RuntimeException("Runtime must be static or php");
         }
         return normalized;
+    }
+
+    private Project getOwnedProject(Long projectId) {
+        User currentUser = getCurrentUser();
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+        if (!project.getUser().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot access another user's project");
+        }
+        return project;
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        return userRepo.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 }

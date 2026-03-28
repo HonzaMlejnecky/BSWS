@@ -368,15 +368,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProjectDTO'
-  /api/v1/projects/user/{userId}:
+  /api/v1/projects/me:
     get:
       tags: [Project]
-      operationId: getUserProjects
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema: { type: integer, format: int64 }
+      operationId: getCurrentUserProjects
       responses:
         '200':
           description: User projects

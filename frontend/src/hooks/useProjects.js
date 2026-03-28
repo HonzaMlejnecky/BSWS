@@ -21,7 +21,7 @@ export default function useProjects() {
 
   const reload = useCallback(async () => {
     if (!userId) return [];
-    const list = await projectsApi.getByUser(userId);
+    const list = await projectsApi.getMine();
     return (list || []).map(mapProject);
   }, [userId]);
 
@@ -33,7 +33,6 @@ export default function useProjects() {
 
   const addProject = async (project) => {
     await projectsApi.create({
-      userId,
       domain: `${project.name.toLowerCase().replace(/\s+/g, '-')}.local`,
       documentRoot: `/srv/customers/user_${userId}/www`,
       runtime: project.type === 'ftp' ? 'php' : 'static',
