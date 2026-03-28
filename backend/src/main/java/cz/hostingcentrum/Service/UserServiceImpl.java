@@ -30,7 +30,6 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authManager;
     private final JwtService jwtService;
     private final EncryptedKeyService encryptedKeyService;
-    private final EmailServiceImpl emailServiceImpl;
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
@@ -89,13 +88,7 @@ public class UserServiceImpl implements UserService {
         user.setIsActive(true);
         user.setCreatedAt(LocalDateTime.now());
         user.setPassword(encoder.encode(auth.getPassword()));
-
-        // Generate activation code
-        String activationCode = encryptedKeyService.generateActivationCode() + "";
-        user.setCode(encryptedKeyService.encrypt(activationCode));
-
-        // Send verification email
-        emailServiceImpl.registationMail(user.getEmail(), user.getCode());
+        user.setCode(null);
 
         userRepo.save(user);
         log.info("User registered successfully: {}", auth.getEmail());
@@ -106,7 +99,12 @@ public class UserServiceImpl implements UserService {
         log.debug("Verifying email for user: {}", email);
         User user = findByEmail(email);
 
-        if (user != null && Objects.equals(
+        if (user == null || user.getCode() == null) {
+            log.warn("Email verification is not required for user: {}", email);
+            return false;
+        }
+
+        if (Objects.equals(
                 encryptedKeyService.decrypt(user.getCode()),
                 encryptedKeyService.decrypt(code))
         ) {

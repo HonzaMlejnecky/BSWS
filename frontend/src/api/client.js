@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8083';
+const DEFAULT_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 function getAuthToken() {
   return localStorage.getItem('hc_jwt');
@@ -15,7 +15,15 @@ async function request(path, options = {}) {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const res = await fetch(`${DEFAULT_BASE_URL}${path}`, { ...options, headers });
+  let res;
+  try {
+    res = await fetch(`${DEFAULT_BASE_URL}${path}`, { ...options, headers });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error('Nepodařilo se připojit k serveru. Zkontrolujte, že backend běží a zkuste to znovu.');
+    }
+    throw error;
+  }
   const contentType = res.headers.get('content-type') || '';
   const payload = contentType.includes('application/json') ? await res.json() : await res.text();
 

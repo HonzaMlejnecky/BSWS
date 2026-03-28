@@ -2,7 +2,6 @@ package cz.hostingcentrum.Controller;
 
 import cz.hostingcentrum.DTO.LoginDto;
 import cz.hostingcentrum.DTO.RegisterDto;
-import cz.hostingcentrum.Model.User;
 import cz.hostingcentrum.Service.UserServiceImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,11 +28,6 @@ public class AuthController {
     @PostMapping("/api/v1/auth/login")
     public ResponseEntity<String> login(@Valid @RequestBody LoginDto authDTO) {
         log.debug("Login attempt for email: {}", authDTO.getEmail());
-        User user = userServiceImpl.findByEmail(authDTO.getEmail());
-        if (user != null && user.getCode() != null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("First verified your email");
-        }
-
         String token = userServiceImpl.verify(authDTO);
         if (token != null) {
             log.info("Login successful for email: {}", authDTO.getEmail());
