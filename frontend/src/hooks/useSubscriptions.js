@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ordersApi, plansApi } from '../api/generatedClient';
-import { useAuth } from '../context/AuthContext';
 
 export default function useSubscriptions() {
-  const { setUserId } = useAuth();
   const [plans, setPlans] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,13 +14,12 @@ export default function useSubscriptions() {
       const [plansData, subsData] = await Promise.all([plansApi.getAll(), ordersApi.getMine()]);
       setPlans(plansData || []);
       setSubscriptions(subsData || []);
-      if (subsData?.[0]?.userId) setUserId(subsData[0].userId);
     } catch (err) {
       setError(err.message || 'Failed to load subscriptions');
     } finally {
       setLoading(false);
     }
-  }, [setUserId]);
+  }, []);
 
   useEffect(() => {
     reload();

@@ -13,6 +13,7 @@ import EmailPage from './pages/EmailPage.jsx';
 import FTPPage from './pages/FTPPage.jsx';
 import SubscriptionPage from './SubscrioptionPage.jsx';
 import ProtectedRoute from './components/routing/ProtectedRoute';
+import SubscriptionGate from './components/routing/SubscriptionGate';
 
 const Home = ({ onOpenModal }) => (
   <>
@@ -33,15 +34,16 @@ function App() {
 
   return (
     <Router>
-      <AuthModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialLoginMode={modalMode} />
+      <AuthModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialLoginMode={modalMode} redirectTo="/app" />
       <div className="min-h-screen bg-white flex flex-col">
         <Navbar onOpenModal={() => openModal(true)} />
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home onOpenModal={openModal} />} />
             <Route path="/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-            <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+            <Route path="/app" element={<ProtectedRoute><SubscriptionGate><DashboardPage /></SubscriptionGate></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><SubscriptionGate><DashboardPage /></SubscriptionGate></ProtectedRoute>} />
+            <Route path="/projects" element={<ProtectedRoute><SubscriptionGate><ProjectsPage /></SubscriptionGate></ProtectedRoute>} />
             <Route path="/databases" element={<ProtectedRoute><DatabasesPage /></ProtectedRoute>} />
             <Route path="/dashboard/emails" element={<ProtectedRoute><EmailPage /></ProtectedRoute>} />
             <Route path="/ftp" element={<ProtectedRoute><FTPPage /></ProtectedRoute>} />

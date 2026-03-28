@@ -34,7 +34,7 @@ const AuthModal = ({ isOpen, onClose, initialLoginMode, redirectTo = '/dashboard
     try {
       if (isLoginMode) {
         await login({ email: form.email, password: form.password });
-        const redirectPath = location.state?.from?.pathname || '/dashboard';
+        const redirectPath = location.state?.from?.pathname || redirectTo;
         navigate(redirectPath, { replace: true });
         onClose();
       } else {

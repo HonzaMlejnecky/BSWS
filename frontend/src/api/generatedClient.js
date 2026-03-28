@@ -10,6 +10,11 @@ export const authApi = {
   login: (payload) => apiClient.post('/api/v1/auth/login', payload),
 };
 
+
+export const usersApi = {
+  getMe: () => apiClient.get('/api/v1/users/me'),
+};
+
 export const plansApi = {
   getAll: () => apiClient.get('/api/v1/plans'),
   getById: (id) => apiClient.get(`/api/v1/plans/${id}`),

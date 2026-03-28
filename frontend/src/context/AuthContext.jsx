@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useMemo, useState } from 'react';
-import { authApi, ordersApi } from '../api/generatedClient';
+import { authApi, usersApi } from '../api/generatedClient';
 
 const AuthContext = createContext(null);
 
@@ -17,14 +17,13 @@ export function AuthProvider({ children }) {
     setToken(jwt);
 
     try {
-      const subs = await ordersApi.getMine();
-      const resolvedUserId = subs?.[0]?.userId;
-      if (resolvedUserId) {
-        localStorage.setItem(USER_ID_KEY, String(resolvedUserId));
-        setUserId(resolvedUserId);
+      const identity = await usersApi.getMe();
+      if (identity?.id) {
+        localStorage.setItem(USER_ID_KEY, String(identity.id));
+        setUserId(identity.id);
       }
     } catch {
-      // user can still continue (e.g., no subscription yet)
+      // user can still continue even if identity lookup fails
     }
 
     return jwt;
