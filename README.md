@@ -1,207 +1,162 @@
-# Hostingove centrum BSWS
+# Hostingové centrum (MVP)
 
-Semestralni prace — hostingove centrum postavene na Dockeru.
+Semestrální projekt „Hostingové centrum“ ve virtuálním prostředí. Cílem je funkční end-to-end workflow:
 
----
-
-## Zacni zde
-
-| Jsem... | Precti si |
-|---------|-----------|
-| **Novy v projektu** | [docs/JAK-PRACOVAT.md](docs/JAK-PRACOVAT.md) |
-| **Chci vedet co je hotovo** | [docs/ZADANI-STAV.md](docs/ZADANI-STAV.md) |
-| **Pracuji s databazi** | [docs/PRACE-S-DATABAZI.md](docs/PRACE-S-DATABAZI.md) |
+**registrace → login → výběr plánu → vytvoření projektu → provisioning → FTP upload index.html → zobrazení webu na doméně**.
 
 ---
 
-## Rychly start
+## 1) Scope projektu
 
+Projekt implementuje minimální obhajitelné hostingové centrum:
+- uživatelské účty (registrace/login bez email verifikace),
+- výběr předplatného plánu,
+- více projektů na uživatele,
+- oddělené webrooty projektů,
+- mapování domény na webroot přes Apache vhost,
+- FTP údaje na detailu projektu,
+- databáze MariaDB pro perzistenci.
+
+### Co není součástí MVP
+- komerční billing,
+- komplexní mailhosting,
+- IMAP/POP3/webmail,
+- enterprise provisioning orchestrátor.
+
+> **Email část:** v tomto MVP není plnohodnotně implementována. Projekt se soustředí na povinný hosting workflow.
+
+---
+
+## 2) Architektura
+
+Hlavní entity:
+- `User`
+- `SubscriptionPlan (Plan)`
+- `Subscription (User → Plan)`
+- `Project` (včetně domény, webrootu, stavu, FTP údajů)
+
+Vazby:
+- jeden uživatel může mít více projektů,
+- projekt patří právě jednomu uživateli,
+- každý projekt má vlastní doménu a vlastní webroot,
+- projekt vyžaduje aktivní subscription.
+
+Stavy projektu:
+- `provisioning`
+- `active`
+- `failed`
+
+---
+
+## 3) Spuštění projektu
+
+## Požadavky
+- Docker + Docker Compose
+- Linux/macOS/WSL doporučeno
+
+### Start
 ```bash
-# 1. Klonuj a prejdi do slozky
-git clone <url>
-cd BSWS
-
-# 2. Spust (automaticky vytvori .env)
-./scripts/start.sh          # Mac/Linux
-.\scripts\start.ps1         # Windows PowerShell
-# nebo: make start
-
-# 3. Otevri http://localhost
+docker compose up -d --build
 ```
 
-## Aktualizace (po pullnuti zmen od kolegu)
+### Důležité endpointy
+- Frontend: `http://localhost`
+- Backend API: `http://localhost:8080`
+- Swagger: `http://localhost:8080/swagger-ui/index.html`
 
-```bash
-./scripts/update.sh         # Mac/Linux
-.\scripts\update.ps1        # Windows PowerShell
-# nebo: make update
-```
+### Databáze
+- host: `localhost`
+- port: `3307`
+- db: `hosting_platform`
+- user: `platform_user`
+- pass: `platformpass123`
 
-Skript automaticky detekuje co se zmenilo a provede spravne akce (rebuild, restart, reset DB...).
+Flyway migrace se aplikují při startu backendu automaticky.
 
-## Autentizace (dulezita zmena)
+---
 
-- Registrace uzivatele je **okamzite aktivni**.
-- Po `POST /api/v1/auth/register` neni potreba zadna emailova verifikace.
-- Uzivatel se muze ihned prihlasit pres `POST /api/v1/auth/login`.
+## 4) Virtuální prostředí a `/etc/hosts`
 
-**Otevri v prohlizeci:**
-- http://localhost - hlavni web
-- http://localhost:8080 - backend API
+Pro test domén přidejte do host souboru:
 
-## Architektura
-
-```
-Prohlizec
-    |
-    v
-Apache (:80) ─── reverse proxy ───> Spring Boot (:8080) ──> MariaDB (:3307)
-    |
-    +── servuje zakaznicke weby z /srv/customers/{user}/www
-
-FTP (:21) ──> /srv/customers/{user}/
-Mailpit (:8025 web, :1025 SMTP)
-```
-
-## Sluzby
-
-| Sluzba | Kontejner | Port | Stav |
-|--------|-----------|------|------|
-| Apache (proxy) | `hc-web` | 80 | Aktivni |
-| Spring Boot | `hc-backend` | 8080 | Aktivni |
-| MariaDB | `hc-db` | 3307 | Aktivni |
-| FTP | `hc-ftp` | 21 | Zakomentovano |
-| Mail | `hc-mail` | 8025 | Zakomentovano |
-
-## Pristupy
-
-| Co | Kde | Udaje |
-|----|-----|-------|
-| API | http://localhost:8080 | — |
-| Web | http://localhost | — |
-| Databaze | localhost:3307 | `platform_user` / `platformpass123` |
-
-## Prikazy
-
-### Pomoci skriptu (doporuceno)
-
-| Akce | Mac/Linux | Windows | Make |
-|------|-----------|---------|------|
-| Prvni spusteni | `./scripts/start.sh` | `.\scripts\start.ps1` | `make start` |
-| Aktualizace | `./scripts/update.sh` | `.\scripts\update.ps1` | `make update` |
-| Zastavit | - | - | `make stop` |
-| Reset DB | - | - | `make reset` |
-| Logy | - | - | `make logs` |
-| Pripojit k DB | - | - | `make db` |
-
-### Rucne (docker compose)
-
-```bash
-docker compose up -d              # Spustit
-docker compose up -d --build      # Spustit + rebuild
-docker compose down               # Zastavit
-docker compose down -v            # Zastavit + smazat DB
-docker compose logs -f            # Logy
-docker compose logs -f backend    # Logy backendu
-docker compose restart web        # Restart Apache
-docker compose ps                 # Stav kontejneru
-```
-
-### Databaze
-
-```bash
-# Pripojit se
-docker exec -it hc-db mariadb -u platform_user -pplatformpass123 hosting_platform
-
-# Uvnitr: SHOW TABLES; SELECT * FROM users; exit;
-```
-
-## Konflikt portu?
-
-Uprav v `.env`:
-```bash
-WEB_PORT=8000        # misto 80
-BACKEND_PORT=8081    # misto 8080
-DB_PORT=3308         # misto 3307
-```
-
-## Dokumentace
-
-### Jak pracovat s projektem
-| Dokument | Popis |
-|----------|-------|
-| [docs/JAK-PRACOVAT.md](docs/JAK-PRACOVAT.md) | **Blbuvzdorny navod pro vsechny** |
-| [docs/PRACE-S-DATABAZI.md](docs/PRACE-S-DATABAZI.md) | Flyway migrace, backup, reseni problemu |
-| [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) | Detailni technicka dokumentace |
-
-### Stav projektu a ukoly
-| Dokument | Popis |
-|----------|-------|
-| [docs/ZADANI-STAV.md](docs/ZADANI-STAV.md) | **Co je hotovo a co zbyva** |
-| [docs/ROZDELENI-PRACE.md](docs/ROZDELENI-PRACE.md) | Kdo co dela |
-| [docs/UKOLY-BACKEND.md](docs/UKOLY-BACKEND.md) | Ukoly pro tym Backend |
-| [docs/UKOLY-FRONTEND.md](docs/UKOLY-FRONTEND.md) | Ukoly pro tym Frontend |
-| [docs/UKOLY-DATABAZE.md](docs/UKOLY-DATABAZE.md) | Ukoly pro tym Databaze |
-| [docs/UKOLY-WEBSERVER.md](docs/UKOLY-WEBSERVER.md) | Ukoly pro tym Webserver |
-| [docs/UKOLY-FTP.md](docs/UKOLY-FTP.md) | Ukoly pro tym FTP |
-| [docs/UKOLY-MAIL.md](docs/UKOLY-MAIL.md) | Ukoly pro tym Mail |
-
-## Struktura projektu
-
-```
-BSWS/
-├── docker-compose.yml      # Orchestrace
-├── .env.example            # Sablona konfigurace
-├── backend/                # Spring Boot
-├── frontend/               # React/Next.js (prazdne)
-├── web/                    # Apache config
-├── db/                     # SQL skripty
-├── ftp/                    # FTP config
-├── mail/                   # Mail config
-├── customers/              # Zakaznicke weby
-└── docs/                   # Dokumentace
-```
-
-## Licence
-
-| Produkt | Licence |
-|---------|---------|
-| Apache HTTP Server | Apache License 2.0 |
-| Spring Boot | Apache License 2.0 |
-| MariaDB | GPL v2 |
-| Pure-FTPd | BSD |
-| Mailpit | MIT |
-| Docker | Apache License 2.0 |
-
-
-## SFTP 
-- http://localhost:8084/
-- http://sftp.local
-
-## WEB
--  http://frontend.local
-
-## BACKEND
-- http://localhost:8083/swagger-ui/index.html
-- http://api.local/swagger-ui/index.html
-
-## MAIL
-- https://localhost/mail/
-- https://mail.local/mail/
-- https://localhost/iredadmin/
-- https://mail.local/iredadmin/
-
-## PHPMYADMIN
-- http://localhost:8081/
-- http://dbadmin.local/index.php
-
-
-## Nastavení
-Pro správné fungování přidej do `C:\Windows\System32\drivers\etc\hosts` (Windows) nebo `/etc/hosts` (Linux/Mac) tyto test domény:
-
-```
-127.0.0.1 localhost frontend.local api.local dbadmin.local sftp.local mail.local
+```txt
+127.0.0.1 localhost api.local frontend.local
 127.0.0.1 demo-1.local demo-2.local demo-3.local
 ```
 
-`demo-*.local` domény jsou určené pro test publish flow (generované Apache vhosty pro projekty).
+Pokud aplikaci provozujete na jiné IP virtuálního serveru (např. `192.168.56.20`), použijte tuto IP místo `127.0.0.1`.
+
+---
+
+## 5) Uživatelský workflow
+
+1. Registrace uživatele (`/register`) – bez email verifikace.
+2. Login (`/login`).
+3. Pokud uživatel nemá aktivní subscription, je přesměrován na `/plan`.
+4. Po výběru plánu může vytvořit projekt (`/projects/new`).
+5. Po vytvoření je uživatel přesměrován na detail projektu (`/projects/:id`).
+
+---
+
+## 6) Provisioning workflow
+
+Při vytvoření projektu backend:
+1. validuje unikátnost domény,
+2. uloží projekt do DB ve stavu `provisioning`,
+3. vytvoří webroot `customers/user_<id>/<project-slug>/www`,
+4. připraví FTP přístupové údaje,
+5. vytvoří Apache vhost konfiguraci pro doménu,
+6. provede graceful reload Apache,
+7. nastaví stav projektu na `active` (nebo `failed` při chybě).
+
+---
+
+## 7) FTP workflow
+
+FTP údaje jsou v detailu projektu:
+- FTP host
+- FTP port
+- FTP username
+- FTP heslo
+- webroot path
+
+Postup:
+1. Připojte se FTP klientem (např. FileZilla).
+2. Nahrajte vlastní `index.html` do webrootu projektu.
+3. Otevřete projektovou doménu v prohlížeči.
+
+---
+
+## 8) Infrastruktura
+
+- Web server: Apache (`web/apache-config`)
+- DB server: MariaDB (`db/init` + backend Flyway)
+- FTP: přístupové údaje per projekt (MVP provisioning level)
+
+Apache vhosty projektů se generují do adresáře definovaného backend konfigurací:
+- `app.apache.vhosts-dir` (default `/srv/apache/vhosts.d`)
+
+Mapování domény → webroot je řízeno `ServerName` a `DocumentRoot` ve vhostu.
+
+---
+
+## 9) Omezení
+
+- Provisioning je synchronní (bez job queue).
+- FTP účet je v MVP „prepared credentials“ model; navázání na externí FTP správce může vyžadovat další krok.
+- Email SMTP/IMAP/POP3 stack není součástí tohoto MVP.
+
+---
+
+## 10) Akceptační scénáře (jak testovat)
+
+1. Zaregistrovat nového uživatele.
+2. Přihlásit se.
+3. Vybrat plan.
+4. Vytvořit projekt (název + doména).
+5. Ověřit detail projektu + FTP údaje.
+6. Uploadnout `index.html` do webrootu.
+7. Otevřít doménu a ověřit obsah.
+8. Vytvořit druhý projekt stejného uživatele.
+9. Ověřit oddělení domén a obsahů.
+10. Ověřit, že jiný uživatel nevidí cizí projekt (`/api/v1/projects/{id}` vrátí 404).

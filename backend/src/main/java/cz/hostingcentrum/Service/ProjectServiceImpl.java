@@ -1,5 +1,6 @@
 package cz.hostingcentrum.Service;
 
+import cz.hostingcentrum.Config.EncryptedKeyService;
 import cz.hostingcentrum.DTO.CreateProjectDTO;
 import cz.hostingcentrum.DTO.ProjectDTO;
 import cz.hostingcentrum.Enum.SubscriptionStatus;
@@ -26,19 +27,19 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class ProjectServiceImpl implements ProjectService {
 
-    private static final Pattern FQDN_PATTERN = Pattern.compile(
-            "^(?=.{1,253}$)(?:(?!-)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:[a-z]{2,63})$"
-    );
+    private static final Pattern HOST_PATTERN = Pattern.compile("^(?=.{1,253}$)(?!-)[a-z0-9][a-z0-9.-]*[a-z0-9]$");
 
     private final ProjectRepository projectRepository;
     private final UserRepo userRepo;
     private final SubscriptionRepo subscriptionRepo;
+    private final EncryptedKeyService encryptedKeyService;
 
     @Value("${app.customers-path:/srv/customers}")
     private String customersPath;
@@ -52,130 +53,168 @@ public class ProjectServiceImpl implements ProjectService {
     @Value("${app.apache.reload-command:apachectl -k graceful}")
     private String apacheReloadCommand;
 
+    @Value("${app.ftp.host:localhost}")
+    private String ftpHost;
+
+    @Value("${app.ftp.port:21}")
+    private Integer ftpPort;
+
     @Override
     public ProjectDTO createProject(CreateProjectDTO dto) {
         User user = getCurrentUser();
+        Subscription activeSub = getActiveSubscription(user.getId());
 
-        Subscription activeSub = subscriptionRepo
-                .findByUserId(user.getId())
-                .stream()
-                .filter(s -> s.getStatus() == SubscriptionStatus.active)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No active subscription"));
-
-        long currentCount = projectRepository.countByUserId(user.getId());
-        int maxProjects = activeSub.getPlan().getMaxProjects();
-        if (currentCount >= maxProjects) {
-            throw new RuntimeException("Project limit exceeded for this user");
-        }
-
-        String normalizedDomain = normalizeAndValidateDomain(dto.getDomain());
+        String normalizedDomain = normalizeAndValidateHost(dto.getDomain());
         assertDomainIsAvailable(normalizedDomain);
 
-        String runtime = normalizeRuntime(dto.getRuntime());
-        String documentRoot = buildDocumentRoot(user.getId());
+        String projectName = normalizeProjectName(dto.getName());
+        String slug = slugify(projectName);
+        String webRoot = buildProjectWebRoot(user.getId(), slug);
+        String ftpUsername = buildFtpUsername(user.getId(), slug);
+        String ftpPassword = generateProvisionedSecret();
 
-        Project saved = projectRepository.save(Project.builder()
+        Project project = Project.builder()
                 .user(user)
-                .projectName(buildProjectNameFromDomain(normalizedDomain))
+                .plan(activeSub.getPlan())
+                .projectName(projectName)
+                .slug(slug)
                 .domain(normalizedDomain)
-                .documentRoot(documentRoot)
-                .runtime(runtime)
-                .publicationStatus("draft")
+                .documentRoot(webRoot)
+                .runtime("static")
+                .publicationStatus("provisioning")
+                .ftpHost(ftpHost)
+                .ftpPort(ftpPort)
+                .ftpUsername(ftpUsername)
+                .ftpPasswordEncrypted(encryptedKeyService.encrypt(ftpPassword))
                 .provisioningError(null)
-                .isActive(Boolean.TRUE)
+                .isActive(Boolean.FALSE)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
-                .build());
+                .build();
 
-        return mapToDto(saved);
+        Project saved = projectRepository.save(project);
+
+        try {
+            provisionProject(saved);
+            saved.setPublicationStatus("active");
+            saved.setIsActive(Boolean.TRUE);
+            saved.setProvisioningError(null);
+            saved.setUpdatedAt(LocalDateTime.now());
+            return mapToDto(projectRepository.save(saved));
+        } catch (Exception ex) {
+            saved.setPublicationStatus("failed");
+            saved.setProvisioningError(ex.getMessage());
+            saved.setUpdatedAt(LocalDateTime.now());
+            projectRepository.save(saved);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Provisioning failed: " + ex.getMessage());
+        }
     }
 
     @Override
     public List<ProjectDTO> getCurrentUserProjects() {
         User user = getCurrentUser();
-        return projectRepository.findByUserId(user.getId())
-                .stream()
-                .map(this::mapToDto)
-                .toList();
+        return projectRepository.findByUserId(user.getId()).stream().map(this::mapToDtoWithoutSecrets).toList();
+    }
+
+    @Override
+    public ProjectDTO getCurrentUserProject(Long projectId) {
+        User user = getCurrentUser();
+        Project project = projectRepository.findByIdAndUserId(projectId, user.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+        return mapToDto(project);
     }
 
     @Override
     public void deleteProject(Long projectId) {
-        Project project = getOwnedProject(projectId);
+        User user = getCurrentUser();
+        Project project = projectRepository.findByIdAndUserId(projectId, user.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
         projectRepository.delete(project);
     }
 
-    @Override
-    public ProjectDTO publishProject(Long projectId) {
-        Project project = getOwnedProject(projectId);
-        try {
-            validatePublishableDocumentRoot(project);
-            validateProjectIdentityForFilesystem(project);
+    private void provisionProject(Project project) throws IOException, InterruptedException {
+        Path webRootPath = Paths.get(project.getDocumentRoot()).normalize();
+        Files.createDirectories(webRootPath);
 
-            String vhostConfig = renderVhostConfig(project);
-            writeOrUpdateVhostConfig(project, vhostConfig);
-            reloadApacheGracefully();
-
-            project.setPublicationStatus("published");
-            project.setProvisioningError(null);
-            project.setUpdatedAt(LocalDateTime.now());
-            project.setIsActive(Boolean.TRUE);
-
-            return mapToDto(projectRepository.save(project));
-        } catch (RuntimeException ex) {
-            markProjectProvisioningFailed(project, ex.getMessage());
-            throw ex;
-        } catch (Exception ex) {
-            markProjectProvisioningFailed(project, ex.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Publishing failed during Apache provisioning.", ex);
+        Path indexFile = webRootPath.resolve("index.html");
+        if (!Files.exists(indexFile)) {
+            Files.writeString(indexFile,
+                    "<h1>" + project.getProjectName() + "</h1><p>Upload your own index.html via FTP.</p>",
+                    StandardCharsets.UTF_8);
         }
+
+        writeOrUpdateVhostConfig(project);
+        reloadApacheGracefully();
     }
 
-    @Override
-    public ProjectDTO redeployProject(Long projectId) {
-        Project project = getOwnedProject(projectId);
+    private void writeOrUpdateVhostConfig(Project project) throws IOException {
+        Path configDir = Paths.get(apacheVhostsDir).normalize();
+        Files.createDirectories(configDir);
+        String safeSlug = project.getSlug().replaceAll("[^a-z0-9-]", "-");
+        String fileName = String.format(apacheVhostFilenamePattern, safeSlug);
+        Path outputFile = configDir.resolve(fileName).normalize();
 
-        if (!"published".equalsIgnoreCase(project.getPublicationStatus())) {
-            throw new RuntimeException("Project must be published before redeploy");
+        String safeDocumentRoot = Paths.get(project.getDocumentRoot()).normalize().toString();
+        String content = "<VirtualHost *:80>\n"
+                + "    ServerName " + project.getDomain() + "\n"
+                + "    DocumentRoot \"" + safeDocumentRoot + "\"\n\n"
+                + "    <Directory \"" + safeDocumentRoot + "\">\n"
+                + "        Options Indexes FollowSymLinks\n"
+                + "        AllowOverride All\n"
+                + "        Require all granted\n"
+                + "    </Directory>\n\n"
+                + "    ErrorLog /proc/self/fd/2\n"
+                + "    CustomLog /proc/self/fd/1 combined\n"
+                + "</VirtualHost>\n";
+
+        Files.writeString(outputFile, content, StandardCharsets.UTF_8);
+    }
+
+    private void reloadApacheGracefully() throws IOException, InterruptedException {
+        Process process = new ProcessBuilder("sh", "-c", apacheReloadCommand)
+                .redirectErrorStream(true)
+                .start();
+
+        String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new IOException("Apache graceful reload failed: " + output);
         }
-
-        project.setUpdatedAt(LocalDateTime.now());
-        return mapToDto(projectRepository.save(project));
     }
 
     private ProjectDTO mapToDto(Project project) {
         return ProjectDTO.builder()
                 .id(project.getId())
                 .userId(project.getUser().getId())
+                .planId(project.getPlan() != null ? project.getPlan().getId() : null)
+                .name(project.getProjectName())
+                .slug(project.getSlug())
                 .domain(project.getDomain())
-                .documentRoot(project.getDocumentRoot())
-                .runtime(project.getRuntime())
-                .publicationStatus(project.getPublicationStatus())
+                .status(project.getPublicationStatus())
+                .webrootPath(project.getDocumentRoot())
+                .ftpHost(project.getFtpHost())
+                .ftpPort(project.getFtpPort())
+                .ftpUsername(project.getFtpUsername())
+                .ftpPassword(encryptedKeyService.decrypt(project.getFtpPasswordEncrypted()))
                 .provisioningError(project.getProvisioningError())
+                .createdAt(project.getCreatedAt() == null ? null : project.getCreatedAt().toString())
+                .updatedAt(project.getUpdatedAt() == null ? null : project.getUpdatedAt().toString())
                 .build();
     }
 
-    private String normalizeRuntime(String runtime) {
-        if (runtime == null) {
-            throw new RuntimeException("Runtime is required");
-        }
-        String normalized = runtime.toLowerCase(Locale.ROOT);
-        if (!normalized.equals("static") && !normalized.equals("php")) {
-            throw new RuntimeException("Runtime must be static or php");
-        }
-        return normalized;
+    private ProjectDTO mapToDtoWithoutSecrets(Project project) {
+        ProjectDTO dto = mapToDto(project);
+        dto.setFtpPassword(null);
+        return dto;
     }
 
-    private Project getOwnedProject(Long projectId) {
-        User currentUser = getCurrentUser();
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
-        if (!project.getUser().getId().equals(currentUser.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot access another user's project");
-        }
-        return project;
+    private Subscription getActiveSubscription(Long userId) {
+        return subscriptionRepo.findByUserId(userId).stream()
+                .filter(s -> s.getStatus() == SubscriptionStatus.active)
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "You must select an active subscription plan before creating a project."));
     }
 
     private User getCurrentUser() {
@@ -187,36 +226,16 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 
-    private String buildDocumentRoot(Long userId) {
-        Path webRoot = Paths.get(customersPath, "user_" + userId, "www");
-        return webRoot.normalize().toString();
-    }
-
-    private void validatePublishableDocumentRoot(Project project) {
-        String documentRoot = project.getDocumentRoot();
-        if (documentRoot == null || documentRoot.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Project cannot be published: document root is not configured.");
+    private String normalizeAndValidateHost(String value) {
+        String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain or hostname is required");
         }
-
-        Path indexFile = Paths.get(documentRoot, "index.html").normalize();
-        if (!Files.exists(indexFile) || !Files.isRegularFile(indexFile)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Project cannot be published: missing index.html in " + documentRoot + ".");
+        if (normalized.contains("/") || normalized.contains("\\") || normalized.contains("..")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain contains invalid characters");
         }
-    }
-
-    private String normalizeAndValidateDomain(String domain) {
-        if (domain == null || domain.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain is required");
-        }
-
-        String normalized = domain.trim().toLowerCase(Locale.ROOT);
-        if (containsPathTraversalPayload(normalized)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain contains invalid path traversal characters");
-        }
-        if (!FQDN_PATTERN.matcher(normalized).matches()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain must be a valid FQDN");
+        if (!HOST_PATTERN.matcher(normalized).matches()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain/hostname has invalid format");
         }
         return normalized;
     }
@@ -227,97 +246,40 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
-    private String buildProjectNameFromDomain(String domain) {
-        String name = domain.replace('.', '-');
-        if (containsPathTraversalPayload(name)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Project name derived from domain is not safe");
+    private String normalizeProjectName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Project name is required");
         }
-        return name;
-    }
-
-    private void validateProjectIdentityForFilesystem(Project project) {
-        if (containsPathTraversalPayload(project.getDomain()) || containsPathTraversalPayload(project.getProjectName())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Project contains invalid domain/name values for filesystem provisioning");
+        String trimmed = name.trim();
+        if (trimmed.length() > 255) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Project name is too long");
         }
+        return trimmed;
     }
 
-    private boolean containsPathTraversalPayload(String value) {
-        if (value == null) {
-            return false;
+    private String slugify(String value) {
+        String base = value.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+        if (base.isBlank()) {
+            base = "project";
         }
-        return value.contains("..")
-                || value.contains("/")
-                || value.contains("\\")
-                || value.contains("\u0000");
+        return base + "-" + UUID.randomUUID().toString().substring(0, 8);
     }
 
-    private String renderVhostConfig(Project project) {
-        String safeDomain = normalizeAndValidateDomain(project.getDomain());
-        String safeDocumentRoot = Paths.get(project.getDocumentRoot()).normalize().toString();
-
-        return "<VirtualHost *:80>\n"
-                + "    ServerName " + safeDomain + "\n"
-                + "    DocumentRoot \"" + safeDocumentRoot + "\"\n\n"
-                + "    <Directory \"" + safeDocumentRoot + "\">\n"
-                + "        Options Indexes FollowSymLinks\n"
-                + "        AllowOverride All\n"
-                + "        Require all granted\n"
-                + "    </Directory>\n\n"
-                + "    ErrorLog /proc/self/fd/2\n"
-                + "    CustomLog /proc/self/fd/1 combined\n"
-                + "</VirtualHost>\n";
+    private String buildProjectWebRoot(Long userId, String slug) {
+        return Paths.get(customersPath, "user_" + userId, slug, "www").normalize().toString();
     }
 
-    private void writeOrUpdateVhostConfig(Project project, String content) {
-        try {
-            Path configDir = Paths.get(apacheVhostsDir).normalize();
-            Files.createDirectories(configDir);
-
-            String safeProjectName = project.getProjectName().replaceAll("[^a-zA-Z0-9-]", "-");
-            String fileName = String.format(apacheVhostFilenamePattern, safeProjectName);
-            if (containsPathTraversalPayload(fileName)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Generated Apache config filename is not safe");
-            }
-
-            Path outputFile = configDir.resolve(fileName).normalize();
-            if (!outputFile.startsWith(configDir)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Resolved Apache config path escapes target directory");
-            }
-
-            Files.writeString(outputFile, content, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Cannot write Apache VirtualHost configuration", e);
+    private String buildFtpUsername(Long userId, String slug) {
+        String normalizedSlug = slug.replaceAll("[^a-z0-9]", "");
+        if (normalizedSlug.length() > 10) {
+            normalizedSlug = normalizedSlug.substring(0, 10);
         }
+        return "u" + userId + "_" + normalizedSlug;
     }
 
-    private void reloadApacheGracefully() {
-        try {
-            Process process = new ProcessBuilder("sh", "-c", apacheReloadCommand)
-                    .redirectErrorStream(true)
-                    .start();
-
-            String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Apache graceful reload failed: " + output);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Apache reload was interrupted", e);
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Cannot execute Apache reload command", e);
-        }
-    }
-
-    private void markProjectProvisioningFailed(Project project, String errorMessage) {
-        project.setPublicationStatus("failed");
-        project.setProvisioningError(errorMessage == null ? "Unknown provisioning error" : errorMessage);
-        project.setUpdatedAt(LocalDateTime.now());
-        projectRepository.save(project);
+    private String generateProvisionedSecret() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 }

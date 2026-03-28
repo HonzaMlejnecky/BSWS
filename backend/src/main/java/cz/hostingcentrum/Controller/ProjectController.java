@@ -9,8 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,19 +33,14 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.getCurrentUserProjects());
     }
 
+    @GetMapping("/api/v1/projects/{projectId}")
+    public ResponseEntity<ProjectDTO> getProjectDetail(@PathVariable Long projectId) {
+        return ResponseEntity.ok(projectService.getCurrentUserProject(projectId));
+    }
+
     @DeleteMapping("/api/v1/projects/{projectId}")
     public ResponseEntity<Void> deleteProject(@PathVariable Long projectId) {
         projectService.deleteProject(projectId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-
-    @PostMapping("/api/v1/projects/{projectId}/publish")
-    public ResponseEntity<ProjectDTO> publishProject(@PathVariable Long projectId) {
-        return ResponseEntity.ok(projectService.publishProject(projectId));
-    }
-
-    @PostMapping("/api/v1/projects/{projectId}/redeploy")
-    public ResponseEntity<ProjectDTO> redeployProject(@PathVariable Long projectId) {
-        return ResponseEntity.ok(projectService.redeployProject(projectId));
     }
 }
