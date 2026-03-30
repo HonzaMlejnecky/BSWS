@@ -9,7 +9,7 @@ const Navbar = () => {
   return (
     <nav className="w-full bg-white py-6 border-b border-gray-100">
       <div className="container mx-auto px-6 flex items-center justify-between gap-4">
-        <Link to={isAuthenticated ? '/dashboard' : '/login'} className="flex items-center">
+        <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center">
           <img src={logoSvg} alt="Mage Logo" className="h-16 md:h-20 object-contain" />
         </Link>
 

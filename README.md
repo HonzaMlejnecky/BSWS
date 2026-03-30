@@ -1,56 +1,58 @@
-# Hostingové centrum (MVP)
+# Hostingové centrum
 
-Semestrální projekt „Hostingové centrum“ ve virtuálním prostředí. Cílem je funkční end-to-end workflow:
+Semestrální projekt „Hostingové centrum“ ve virtuálním prostředí. Systém pokrývá kompletní workflow:
 
-**registrace → login → výběr plánu → vytvoření projektu → provisioning → FTP upload index.html → zobrazení webu na doméně**.
+**registrace → login → výběr plánu → vytvoření projektu → provisioning → upload obsahu (FTP nebo přes aplikaci) → publikace webu na doméně**.
 
 ---
 
 ## 1) Scope projektu
 
-Projekt implementuje minimální obhajitelné hostingové centrum:
-- uživatelské účty (registrace/login bez email verifikace),
-- výběr předplatného plánu,
+Projekt implementuje funkční hostingové centrum pro statické weby:
+- uživatelské účty (registrace/login),
+- výběr a aktivace hostingového plánu,
 - více projektů na uživatele,
 - oddělené webrooty projektů,
-- mapování domény na webroot přes Apache vhost,
-- FTP údaje na detailu projektu,
+- mapování domény na webroot přes Apache VirtualHost,
+- FTP přístupové údaje na detailu projektu,
+- přímý upload souborů přes aplikaci,
 - databáze MariaDB pro perzistenci.
 
-### Co není součástí MVP
-- komerční billing,
-- komplexní mailhosting,
-- IMAP/POP3/webmail,
-- enterprise provisioning orchestrátor.
-
-> **Email část:** v tomto MVP není plnohodnotně implementována. Projekt se soustředí na povinný hosting workflow.
+Mimo scope zůstává komerční billing engine a plnohodnotný mailhosting stack.
 
 ---
 
-## 2) Architektura
+## 2) Hostingové plány
+
+Aplikace pracuje se třemi aktivními plány:
+- **Basic** – 1 projekt, základní publikace, FTP přístup,
+- **Standard** – více projektů, vyšší limity, FTP + upload přes aplikaci,
+- **Premium** – nejvyšší limity, rozšířené parametry pro náročnější weby.
+
+Plán je uložen do subscription a při vytváření projektu se propisuje do metadat projektu.
+
+---
+
+## 3) Architektura
 
 Hlavní entity:
 - `User`
-- `SubscriptionPlan (Plan)`
-- `Subscription (User → Plan)`
-- `Project` (včetně domény, webrootu, stavu, FTP údajů)
-
-Vazby:
-- jeden uživatel může mít více projektů,
-- projekt patří právě jednomu uživateli,
-- každý projekt má vlastní doménu a vlastní webroot,
-- projekt vyžaduje aktivní subscription.
+- `Plan`
+- `Subscription`
+- `Project` (doména, webroot, stav, FTP údaje)
 
 Stavy projektu:
 - `provisioning`
 - `active`
 - `failed`
 
+Každý projekt má vlastní webroot a samostatnou doménu.
+
 ---
 
-## 3) Spuštění projektu
+## 4) Spuštění projektu
 
-## Požadavky
+### Požadavky
 - Docker + Docker Compose
 - Linux/macOS/WSL doporučeno
 
@@ -64,99 +66,55 @@ docker compose up -d --build
 - Backend API: `http://localhost:8080`
 - Swagger: `http://localhost:8080/swagger-ui/index.html`
 
-### Databáze
-- host: `localhost`
-- port: `3307`
-- db: `hosting_platform`
-- user: `platform_user`
-- pass: `platformpass123`
-
-Flyway migrace se aplikují při startu backendu automaticky.
-
 ---
 
-## 4) Virtuální prostředí a `/etc/hosts`
+## 5) Apache provisioning workflow
 
-Pro test domén přidejte do host souboru:
+Backend při vytvoření projektu:
+1. vytvoří webroot v `/srv/customers/user_<id>/<slug>/www`,
+2. vytvoří/aktualizuje Apache vhost v adresáři `/srv/apache/vhosts.d`,
+3. provede validační a reload command (konfigurovatelné přes env),
+4. nastaví stav projektu na `active`.
 
-```txt
-127.0.0.1 localhost api.local frontend.local
-127.0.0.1 demo-1.local demo-2.local demo-3.local
+Apache načítá zákaznické vhosty přes:
+```apache
+IncludeOptional conf/extra/vhosts.d/*.conf
 ```
 
-Pokud aplikaci provozujete na jiné IP virtuálního serveru (např. `192.168.56.20`), použijte tuto IP místo `127.0.0.1`.
+V Docker Compose je složka vhostů sdílená mezi `backend` a `web` službou přes bind mount `./web/apache-config/vhosts.d`.
 
 ---
 
-## 5) Uživatelský workflow
+## 6) Upload obsahu
 
-1. Registrace uživatele (`/register`) – bez email verifikace.
-2. Login (`/login`).
-3. Pokud uživatel nemá aktivní subscription, je přesměrován na `/plan`.
-4. Po výběru plánu může vytvořit projekt (`/projects/new`).
-5. Po vytvoření je uživatel přesměrován na detail projektu (`/projects/:id`).
+Projekt podporuje dvě cesty:
+1. **FTP upload** do webrootu projektu,
+2. **Upload přes aplikaci** na detailu projektu (`/projects/:id`).
 
----
-
-## 6) Provisioning workflow
-
-Při vytvoření projektu backend:
-1. validuje unikátnost domény,
-2. uloží projekt do DB ve stavu `provisioning`,
-3. vytvoří webroot `customers/user_<id>/<project-slug>/www`,
-4. připraví FTP přístupové údaje,
-5. vytvoří Apache vhost konfiguraci pro doménu,
-6. provede graceful reload Apache,
-7. nastaví stav projektu na `active` (nebo `failed` při chybě).
+Přímý upload validuje název souboru a ukládá pouze do webrootu konkrétního projektu.
 
 ---
 
-## 7) FTP workflow
+## 7) Veřejná část aplikace
 
-FTP údaje jsou v detailu projektu:
-- FTP host
-- FTP port
-- FTP username
-- FTP heslo
-- webroot path
+Landing page je dostupná na `/` a obsahuje:
+- představení služby,
+- přehled plánů,
+- CTA na registraci a přihlášení.
 
-Postup:
-1. Připojte se FTP klientem (např. FileZilla).
-2. Nahrajte vlastní `index.html` do webrootu projektu.
-3. Otevřete projektovou doménu v prohlížeči.
+Po přihlášení uživatel pracuje v interní části (dashboard, projektový detail, plán).
 
 ---
 
-## 8) Infrastruktura
+## 8) Ověřovací scénář
 
-- Web server: Apache (`web/apache-config`)
-- DB server: MariaDB (`db/init` + backend Flyway)
-- FTP: přístupové údaje per projekt (MVP provisioning level)
-
-Apache vhosty projektů se generují do adresáře definovaného backend konfigurací:
-- `app.apache.vhosts-dir` (default `/srv/apache/vhosts.d`)
-
-Mapování domény → webroot je řízeno `ServerName` a `DocumentRoot` ve vhostu.
-
----
-
-## 9) Omezení
-
-- Provisioning je synchronní (bez job queue).
-- FTP účet je v MVP „prepared credentials“ model; navázání na externí FTP správce může vyžadovat další krok.
-- Email SMTP/IMAP/POP3 stack není součástí tohoto MVP.
-
----
-
-## 10) Akceptační scénáře (jak testovat)
-
-1. Zaregistrovat nového uživatele.
-2. Přihlásit se.
-3. Vybrat plan.
-4. Vytvořit projekt (název + doména).
-5. Ověřit detail projektu + FTP údaje.
-6. Uploadnout `index.html` do webrootu.
-7. Otevřít doménu a ověřit obsah.
-8. Vytvořit druhý projekt stejného uživatele.
-9. Ověřit oddělení domén a obsahů.
-10. Ověřit, že jiný uživatel nevidí cizí projekt (`/api/v1/projects/{id}` vrátí 404).
+1. Otevřít veřejnou landing page.
+2. Registrovat uživatele.
+3. Přihlásit se.
+4. Vybrat jeden ze 3 plánů.
+5. Vytvořit projekt.
+6. Ověřit, že provisioning vytvořil webroot i vhost config.
+7. Nahrát `index.html` přes FTP.
+8. Nahrát `index.html` přes aplikaci.
+9. Ověřit publikovaný obsah na doméně.
+10. Vytvořit další projekt a ověřit oddělení dat.

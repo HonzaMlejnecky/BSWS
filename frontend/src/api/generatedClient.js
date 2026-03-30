@@ -23,4 +23,10 @@ export const projectsApi = {
   getById: (id) => apiClient.get(`/api/v1/projects/${id}`),
   create: (payload) => apiClient.post('/api/v1/projects', payload),
   remove: (projectId) => apiClient.delete(`/api/v1/projects/${projectId}`),
+  listFiles: (projectId) => apiClient.get(`/api/v1/projects/${projectId}/files`),
+  uploadFile: (projectId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post(`/api/v1/projects/${projectId}/files`, formData);
+  },
 };

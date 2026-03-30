@@ -3,6 +3,7 @@ package cz.hostingcentrum.Service;
 import cz.hostingcentrum.Config.EncryptedKeyService;
 import cz.hostingcentrum.DTO.CreateProjectDTO;
 import cz.hostingcentrum.DTO.ProjectDTO;
+import cz.hostingcentrum.DTO.ProjectFileDto;
 import cz.hostingcentrum.Enum.SubscriptionStatus;
 import cz.hostingcentrum.Interface.ProjectService;
 import cz.hostingcentrum.Model.Project;
@@ -17,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -25,16 +27,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
 public class ProjectServiceImpl implements ProjectService {
 
     private static final Pattern HOST_PATTERN = Pattern.compile("^(?=.{1,253}$)(?!-)[a-z0-9][a-z0-9.-]*[a-z0-9]$");
+    private static final Pattern SAFE_UPLOAD_FILENAME = Pattern.compile("^[a-zA-Z0-9._-]{1,128}$");
 
     private final ProjectRepository projectRepository;
     private final UserRepo userRepo;
@@ -49,6 +54,9 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Value("${app.apache.vhost-filename-pattern:project-%s.conf}")
     private String apacheVhostFilenamePattern;
+
+    @Value("${app.apache.validate-command:httpd -t}")
+    private String apacheValidateCommand;
 
     @Value("${app.apache.reload-command:apachectl -k graceful}")
     private String apacheReloadCommand;
@@ -119,32 +127,83 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectDTO getCurrentUserProject(Long projectId) {
-        User user = getCurrentUser();
-        Project project = projectRepository.findByIdAndUserId(projectId, user.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+        Project project = getOwnedProject(projectId);
         return mapToDto(project);
     }
 
     @Override
+    public List<ProjectFileDto> listProjectFiles(Long projectId) {
+        Project project = getOwnedProject(projectId);
+        Path webRootPath = getProjectWebRootPath(project);
+
+        try {
+            if (!Files.exists(webRootPath)) {
+                return List.of();
+            }
+
+            try (Stream<Path> pathStream = Files.list(webRootPath)) {
+                return pathStream
+                        .filter(Files::isRegularFile)
+                        .sorted(Comparator.comparing(path -> path.getFileName().toString().toLowerCase(Locale.ROOT)))
+                        .map(path -> ProjectFileDto.builder()
+                                .name(path.getFileName().toString())
+                                .sizeBytes(readFileSize(path))
+                                .build())
+                        .toList();
+            }
+        } catch (IOException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to list project files");
+        }
+    }
+
+    @Override
+    public ProjectFileDto uploadProjectFile(Long projectId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Uploaded file is empty");
+        }
+
+        Project project = getOwnedProject(projectId);
+        String safeFileName = normalizeFileName(file.getOriginalFilename());
+        Path webRootPath = getProjectWebRootPath(project);
+        Path targetPath = webRootPath.resolve(safeFileName).normalize();
+
+        if (!targetPath.startsWith(webRootPath)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file target path");
+        }
+
+        try {
+            Files.createDirectories(webRootPath);
+            file.transferTo(targetPath);
+            project.setUpdatedAt(LocalDateTime.now());
+            projectRepository.save(project);
+            return ProjectFileDto.builder()
+                    .name(safeFileName)
+                    .sizeBytes(Files.size(targetPath))
+                    .build();
+        } catch (IOException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store uploaded file");
+        }
+    }
+
+    @Override
     public void deleteProject(Long projectId) {
-        User user = getCurrentUser();
-        Project project = projectRepository.findByIdAndUserId(projectId, user.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+        Project project = getOwnedProject(projectId);
         projectRepository.delete(project);
     }
 
     private void provisionProject(Project project) throws IOException, InterruptedException {
-        Path webRootPath = Paths.get(project.getDocumentRoot()).normalize();
+        Path webRootPath = getProjectWebRootPath(project);
         Files.createDirectories(webRootPath);
 
         Path indexFile = webRootPath.resolve("index.html");
         if (!Files.exists(indexFile)) {
             Files.writeString(indexFile,
-                    "<h1>" + project.getProjectName() + "</h1><p>Upload your own index.html via FTP.</p>",
+                    "<h1>" + project.getProjectName() + "</h1><p>Upload your own index.html via FTP or from the application.</p>",
                     StandardCharsets.UTF_8);
         }
 
         writeOrUpdateVhostConfig(project);
+        validateApacheConfig();
         reloadApacheGracefully();
     }
 
@@ -155,7 +214,7 @@ public class ProjectServiceImpl implements ProjectService {
         String fileName = String.format(apacheVhostFilenamePattern, safeSlug);
         Path outputFile = configDir.resolve(fileName).normalize();
 
-        String safeDocumentRoot = Paths.get(project.getDocumentRoot()).normalize().toString();
+        String safeDocumentRoot = getProjectWebRootPath(project).toString();
         String content = "<VirtualHost *:80>\n"
                 + "    ServerName " + project.getDomain() + "\n"
                 + "    DocumentRoot \"" + safeDocumentRoot + "\"\n\n"
@@ -171,15 +230,26 @@ public class ProjectServiceImpl implements ProjectService {
         Files.writeString(outputFile, content, StandardCharsets.UTF_8);
     }
 
+    private void validateApacheConfig() throws IOException, InterruptedException {
+        runCommand(apacheValidateCommand, "Apache config validation failed: ");
+    }
+
     private void reloadApacheGracefully() throws IOException, InterruptedException {
-        Process process = new ProcessBuilder("sh", "-c", apacheReloadCommand)
+        runCommand(apacheReloadCommand, "Apache graceful reload failed: ");
+    }
+
+    private void runCommand(String command, String errorPrefix) throws IOException, InterruptedException {
+        if (command == null || command.isBlank()) {
+            return;
+        }
+        Process process = new ProcessBuilder("sh", "-c", command)
                 .redirectErrorStream(true)
                 .start();
 
         String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         int exitCode = process.waitFor();
         if (exitCode != 0) {
-            throw new IOException("Apache graceful reload failed: " + output);
+            throw new IOException(errorPrefix + output.trim());
         }
     }
 
@@ -188,6 +258,8 @@ public class ProjectServiceImpl implements ProjectService {
                 .id(project.getId())
                 .userId(project.getUser().getId())
                 .planId(project.getPlan() != null ? project.getPlan().getId() : null)
+                .planCode(project.getPlan() != null ? project.getPlan().getCode() : null)
+                .planName(project.getPlan() != null ? project.getPlan().getName() : null)
                 .name(project.getProjectName())
                 .slug(project.getSlug())
                 .domain(project.getDomain())
@@ -226,6 +298,12 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 
+    private Project getOwnedProject(Long projectId) {
+        User user = getCurrentUser();
+        return projectRepository.findByIdAndUserId(projectId, user.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+    }
+
     private String normalizeAndValidateHost(String value) {
         String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
         if (normalized.isBlank()) {
@@ -236,6 +314,15 @@ public class ProjectServiceImpl implements ProjectService {
         }
         if (!HOST_PATTERN.matcher(normalized).matches()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain/hostname has invalid format");
+        }
+        return normalized;
+    }
+
+    private String normalizeFileName(String originalFilename) {
+        String normalized = originalFilename == null ? "" : Paths.get(originalFilename).getFileName().toString();
+        if (!SAFE_UPLOAD_FILENAME.matcher(normalized).matches()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only letters, numbers, dot, underscore and dash are allowed in file name");
         }
         return normalized;
     }
@@ -271,6 +358,16 @@ public class ProjectServiceImpl implements ProjectService {
         return Paths.get(customersPath, "user_" + userId, slug, "www").normalize().toString();
     }
 
+    private Path getProjectWebRootPath(Project project) {
+        Path webRootPath = Paths.get(project.getDocumentRoot()).normalize();
+        Path customersRoot = Paths.get(customersPath).normalize();
+        if (!webRootPath.startsWith(customersRoot)) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Project webroot is outside configured customers path");
+        }
+        return webRootPath;
+    }
+
     private String buildFtpUsername(Long userId, String slug) {
         String normalizedSlug = slug.replaceAll("[^a-z0-9]", "");
         if (normalizedSlug.length() > 10) {
@@ -281,5 +378,13 @@ public class ProjectServiceImpl implements ProjectService {
 
     private String generateProvisionedSecret() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+    }
+
+    private long readFileSize(Path file) {
+        try {
+            return Files.size(file);
+        } catch (IOException e) {
+            return -1;
+        }
     }
 }

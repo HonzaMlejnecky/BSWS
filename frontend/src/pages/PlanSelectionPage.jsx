@@ -49,19 +49,21 @@ export default function PlanSelectionPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-      <PageHeader title="Výběr plánu" description="Pro MVP je dostupný basic static hosting plán." />
+      <PageHeader title="Výběr hostingového plánu" description="Vyberte plán, který odpovídá rozsahu vašich webových projektů." />
       {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {plans.filter((p) => p.code === 'basic').map((plan) => (
+        {plans.map((plan) => (
           <div key={plan.id} className="bg-white rounded-2xl shadow-md p-6 border-2 border-[#004CAF]">
             <h2 className="text-2xl font-bold text-[#004CAF]">{plan.name}</h2>
             <p className="text-gray-600 mt-2">{plan.description}</p>
             <ul className="mt-6 space-y-2 text-sm text-gray-700">
-              <li>• static hosting</li>
-              <li>• FTP upload index.html</li>
-              <li>• projektový webroot + doména</li>
+              <li>• Diskový prostor: {plan.diskSpaceMb} MB</li>
+              <li>• Max. projektů: {plan.maxDomains}</li>
+              <li>• FTP účty: {plan.maxFtpAccounts}</li>
+              <li>• E-mail účty: {plan.maxEmailAccounts}</li>
             </ul>
-            <button onClick={() => selectPlan(plan.id)} className="w-full mt-8 bg-[#004CAF] text-white py-3 rounded-xl font-semibold hover:bg-[#003b8a]">Aktivovat plán</button>
+            <p className="mt-6 text-sm text-gray-500">{Number(plan.priceMonthly || 0).toFixed(0)} Kč / měsíc</p>
+            <button onClick={() => selectPlan(plan.id)} className="w-full mt-4 bg-[#004CAF] text-white py-3 rounded-xl font-semibold hover:bg-[#003b8a]">Aktivovat plán</button>
           </div>
         ))}
       </div>

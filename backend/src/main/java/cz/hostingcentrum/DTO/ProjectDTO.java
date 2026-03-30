@@ -10,6 +10,8 @@ public class ProjectDTO {
     private Long id;
     private Long userId;
     private Long planId;
+    private String planCode;
+    private String planName;
     private String name;
     private String slug;
     private String domain;

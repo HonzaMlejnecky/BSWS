@@ -46,6 +46,7 @@ export default function DashboardPage() {
           <Link key={project.id} to={`/projects/${project.id}`} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
             <div className="text-lg font-semibold text-gray-900">{project.name}</div>
             <div className="text-sm text-gray-500 mt-1">{project.domain}</div>
+            <div className="text-sm text-gray-600 mt-2">Plán: <strong>{project.planName || 'N/A'}</strong></div>
             <span className="inline-block mt-4 text-xs font-semibold px-3 py-1 rounded-full bg-blue-50 text-[#004CAF]">{project.status}</span>
           </Link>
         ))}

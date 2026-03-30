@@ -110,6 +110,9 @@
         # Paths
         CUSTOMERS_PATH: /srv/customers
         APP_APACHE_VHOSTS_DIR: /srv/apache/vhosts.d
+        APP_APACHE_VALIDATE_COMMAND: true
+        APP_APACHE_RELOAD_COMMAND: true
+      user: "0:0"
       volumes:
         # Customer folders - backend creates them when hosting is activated
         - ./customers:/srv/customers

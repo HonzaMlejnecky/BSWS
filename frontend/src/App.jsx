@@ -1,6 +1,7 @@
-import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/routing/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
+import LandingPage from './pages/LandingPage';
 import RegisterPage from './pages/RegisterPage';
 import PlanSelectionPage from './pages/PlanSelectionPage';
 import DashboardPage from './pages/DashboardPage';
@@ -16,7 +17,7 @@ function App() {
         <Navbar />
         <main className="flex-grow">
           <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/plan" element={<ProtectedRoute><PlanSelectionPage /></ProtectedRoute>} />
