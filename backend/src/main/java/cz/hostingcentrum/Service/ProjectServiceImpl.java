@@ -26,8 +26,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -173,7 +176,9 @@ public class ProjectServiceImpl implements ProjectService {
 
         try {
             Files.createDirectories(webRootPath);
+            ensureWorldReadableDirectory(webRootPath);
             file.transferTo(targetPath);
+            ensureWorldReadableFile(targetPath);
             project.setUpdatedAt(LocalDateTime.now());
             projectRepository.save(project);
             return ProjectFileDto.builder()
@@ -194,12 +199,14 @@ public class ProjectServiceImpl implements ProjectService {
     private void provisionProject(Project project) throws IOException, InterruptedException {
         Path webRootPath = getProjectWebRootPath(project);
         Files.createDirectories(webRootPath);
+        ensureWorldReadableDirectory(webRootPath);
 
         Path indexFile = webRootPath.resolve("index.html");
         if (!Files.exists(indexFile)) {
             Files.writeString(indexFile,
                     "<h1>" + project.getProjectName() + "</h1><p>Upload your own index.html via FTP or from the application.</p>",
                     StandardCharsets.UTF_8);
+            ensureWorldReadableFile(indexFile);
         }
 
         writeOrUpdateVhostConfig(project);
@@ -222,6 +229,7 @@ public class ProjectServiceImpl implements ProjectService {
                 + "        Options Indexes FollowSymLinks\n"
                 + "        AllowOverride All\n"
                 + "        Require all granted\n"
+                + "        DirectoryIndex index.html index.htm\n"
                 + "    </Directory>\n\n"
                 + "    ErrorLog /proc/self/fd/2\n"
                 + "    CustomLog /proc/self/fd/1 combined\n"
@@ -316,6 +324,31 @@ public class ProjectServiceImpl implements ProjectService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain/hostname has invalid format");
         }
         return normalized;
+    }
+
+
+    private void ensureWorldReadableDirectory(Path directory) {
+        setPosixPermissionsIfSupported(directory, EnumSet.of(
+                PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE,
+                PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_EXECUTE,
+                PosixFilePermission.OTHERS_READ, PosixFilePermission.OTHERS_EXECUTE));
+    }
+
+    private void ensureWorldReadableFile(Path file) {
+        setPosixPermissionsIfSupported(file, EnumSet.of(
+                PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE,
+                PosixFilePermission.GROUP_READ,
+                PosixFilePermission.OTHERS_READ));
+    }
+
+    private void setPosixPermissionsIfSupported(Path path, Set<PosixFilePermission> permissions) {
+        try {
+            Files.setPosixFilePermissions(path, permissions);
+        } catch (UnsupportedOperationException ignored) {
+            // Non-POSIX filesystem (e.g., Windows)
+        } catch (IOException ignored) {
+            // Keep provisioning/upload functional even if chmod fails
+        }
     }
 
     private String normalizeFileName(String originalFilename) {

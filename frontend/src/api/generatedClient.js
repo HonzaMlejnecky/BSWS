@@ -30,3 +30,10 @@ export const projectsApi = {
     return apiClient.post(`/api/v1/projects/${projectId}/files`, formData);
   },
 };
+
+export const databaseApi = {
+  getMine: () => apiClient.get('/api/v1/databases/me'),
+  create: (payload) => apiClient.post('/api/v1/databases', payload),
+  remove: (databaseId) => apiClient.delete(`/api/v1/databases/${databaseId}`),
+  updatePassword: (databaseId, newPassword) => apiClient.post('/api/v1/databases/password', { databaseId, newPassword }),
+};

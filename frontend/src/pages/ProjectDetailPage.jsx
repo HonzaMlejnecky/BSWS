@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { projectsApi } from '../api/generatedClient';
 import PageHeader from '../components/UI/PageHeader';
+import MailServerSetupCard from '../components/ProjectDetail/MailServerSetupCard';
 
 function formatSize(value) {
   if (value == null || value < 0) return 'neznámá velikost';
@@ -131,6 +132,9 @@ export default function ProjectDetailPage() {
           </ul>
         )}
       </div>
+
+
+      <MailServerSetupCard domain={project.domain} />
 
       <div className="bg-[#F5F9FF] rounded-2xl border border-blue-100 p-6">
         <h2 className="text-xl font-semibold mb-3 text-[#004CAF]">Jak otestovat web</h2>

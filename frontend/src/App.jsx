@@ -7,6 +7,7 @@ import PlanSelectionPage from './pages/PlanSelectionPage';
 import DashboardPage from './pages/DashboardPage';
 import CreateProjectPage from './pages/CreateProjectPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
+import DatabasePage from './pages/DatabasePage';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
@@ -24,6 +25,7 @@ function App() {
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
             <Route path="/projects/new" element={<ProtectedRoute><CreateProjectPage /></ProtectedRoute>} />
             <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectDetailPage /></ProtectedRoute>} />
+            <Route path="/databases" element={<ProtectedRoute><DatabasePage /></ProtectedRoute>} />
           </Routes>
         </main>
         <Footer />

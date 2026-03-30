@@ -19,7 +19,7 @@ function mapProject(project) {
     type: project.runtime,
     publicationStatus,
     publicationError: project.provisioningError || '',
-    url: `https://${project.domain}`,
+    url: `http://${project.domain}`,
     gitUrl: project.runtime === 'static' ? 'Git/static deploy' : '',
     logs: [
       `Runtime: ${project.runtime}`,
