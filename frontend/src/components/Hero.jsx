@@ -41,11 +41,11 @@ const Hero = ({ onOpenModal }) => {
                 onClick={() => onOpenModal(false)}
                 className="bg-[#004CAF] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-opacity-90 transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer"
               >
-                vytvořit účet
+                Vytvořit účet
               </button>
               
               <button className="border-2 border-[#004CAF] text-[#004CAF] px-10 py-4 rounded-full font-bold text-lg hover:bg-blue-50 transition-all duration-300 cursor-pointer">
-                zjistit více
+                Zjistit více
               </button>
             </div>
           </div>

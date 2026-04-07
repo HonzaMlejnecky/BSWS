@@ -10,8 +10,12 @@ import cz.hostingcentrum.Repository.CustomerDatabaseRepo;
 import cz.hostingcentrum.Repository.SubscriptionRepo;
 import cz.hostingcentrum.Repository.UserRepo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,10 +30,8 @@ public class CustomerDatabaseServiceImpl implements CustomerDatabaseService {
     private final JdbcTemplate rootJdbcTemplate; // pro fyzickou DB operaci
 
     @Override
-    public CustomerDatabaseDTO createDatabase(Long userId, String dbName, String dbUser, String password) {
-
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public CustomerDatabaseDTO createDatabase(String dbName, String dbUser, String password) {
+        User user = getCurrentUser();
 
         Subscription activeSub = subscriptionRepo
                 .findByUserId(user.getId())
@@ -73,8 +75,9 @@ public class CustomerDatabaseServiceImpl implements CustomerDatabaseService {
     }
 
     @Override
-    public List<CustomerDatabaseDTO> getUserDatabases(Long userId) {
-        return databaseRepo.findByUserId(userId)
+    public List<CustomerDatabaseDTO> getCurrentUserDatabases() {
+        User user = getCurrentUser();
+        return databaseRepo.findByUserId(user.getId())
                 .stream()
                 .map(db -> CustomerDatabaseDTO.builder()
                         .id(db.getId())
@@ -89,6 +92,7 @@ public class CustomerDatabaseServiceImpl implements CustomerDatabaseService {
     public void updateDatabasePassword(Long dbId, String newPassword) {
         CustomerDatabase db = databaseRepo.findById(dbId)
                 .orElseThrow(() -> new RuntimeException("Database not found"));
+        ensureDatabaseOwner(db);
 
         // Změna hesla fyzického DB uživatele
         try {
@@ -106,6 +110,7 @@ public class CustomerDatabaseServiceImpl implements CustomerDatabaseService {
     public void deleteDatabase(Long dbId) {
         CustomerDatabase db = databaseRepo.findById(dbId)
                 .orElseThrow(() -> new RuntimeException("Database not found"));
+        ensureDatabaseOwner(db);
 
         // Odstranění fyzické databáze
         try {
@@ -116,5 +121,21 @@ public class CustomerDatabaseServiceImpl implements CustomerDatabaseService {
         }
 
         databaseRepo.delete(db);
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        return userRepo.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+    }
+
+    private void ensureDatabaseOwner(CustomerDatabase db) {
+        User currentUser = getCurrentUser();
+        if (!db.getUser().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot modify another user's database");
+        }
     }
 }

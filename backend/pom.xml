@@ -51,6 +51,12 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>1.5.5.Final</version>
+		</dependency>
+
 		<!-- ===== JWT token ===== -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
@@ -99,6 +105,11 @@
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>3.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openapitools</groupId>
+			<artifactId>jackson-databind-nullable</artifactId>
+			<version>0.2.6</version>
 		</dependency>
 
 		<!-- ===== TESTS ===== -->
@@ -182,6 +193,91 @@
 				</executions>
 				<dependencies>
 				</dependencies>
+			</plugin>
+			<plugin>
+				<groupId>org.openapitools</groupId>
+				<artifactId>openapi-generator-maven-plugin</artifactId>
+				<version>7.12.0</version>
+				<executions>
+					<execution>
+						<id>generate-openapi-spring</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<inputSpec>${project.basedir}/src/main/resources/openapi/hostingcentrum.yaml</inputSpec>
+							<generatorName>spring</generatorName>
+							<output>${project.build.directory}/generated-sources/openapi</output>
+							<apiPackage>cz.hostingcentrum.generated.api</apiPackage>
+							<modelPackage>cz.hostingcentrum.generated.model</modelPackage>
+							<configOptions>
+								<interfaceOnly>true</interfaceOnly>
+								<useTags>true</useTags>
+								<useResponseEntity>true</useResponseEntity>
+								<skipDefaultInterface>true</skipDefaultInterface>
+								<useSpringBoot3>true</useSpringBoot3>
+							</configOptions>
+							<importMappings>
+								<LoginDto>cz.hostingcentrum.DTO.LoginDto</LoginDto>
+								<RegisterDto>cz.hostingcentrum.DTO.RegisterDto</RegisterDto>
+								<PlanDto>cz.hostingcentrum.DTO.PlanDto</PlanDto>
+								<SubscriptionDto>cz.hostingcentrum.DTO.SubscriptionDto</SubscriptionDto>
+								<SftpAccountDto>cz.hostingcentrum.DTO.SftpAccountDto</SftpAccountDto>
+								<SftpAccChangePassDTO>cz.hostingcentrum.DTO.SftpAccChangePassDTO</SftpAccChangePassDTO>
+								<EmailAccountDTO>cz.hostingcentrum.DTO.EmailAccountDTO</EmailAccountDTO>
+								<EmailDomainDTO>cz.hostingcentrum.DTO.EmailDomainDTO</EmailDomainDTO>
+								<CreateEmailDomainDTO>cz.hostingcentrum.DTO.CreateEmailDomainDTO</CreateEmailDomainDTO>
+								<ChangeEmailPasswordDTO>cz.hostingcentrum.DTO.ChangeEmailPasswordDTO</ChangeEmailPasswordDTO>
+								<CreateDbDTO>cz.hostingcentrum.DTO.CreateDbDTO</CreateDbDTO>
+								<CustomerDatabaseDTO>cz.hostingcentrum.DTO.CustomerDatabaseDTO</CustomerDatabaseDTO>
+								<ChangePassDbDTO>cz.hostingcentrum.DTO.ChangePassDbDTO</ChangePassDbDTO>
+								<CreateProjectDTO>cz.hostingcentrum.DTO.CreateProjectDTO</CreateProjectDTO>
+								<ProjectDTO>cz.hostingcentrum.DTO.ProjectDTO</ProjectDTO>
+								<SubscriptionStatus>cz.hostingcentrum.Enum.SubscriptionStatus</SubscriptionStatus>
+							</importMappings>
+							<schemaMappings>
+								<LoginDto>cz.hostingcentrum.DTO.LoginDto</LoginDto>
+								<RegisterDto>cz.hostingcentrum.DTO.RegisterDto</RegisterDto>
+								<PlanDto>cz.hostingcentrum.DTO.PlanDto</PlanDto>
+								<SubscriptionDto>cz.hostingcentrum.DTO.SubscriptionDto</SubscriptionDto>
+								<SftpAccountDto>cz.hostingcentrum.DTO.SftpAccountDto</SftpAccountDto>
+								<SftpAccChangePassDTO>cz.hostingcentrum.DTO.SftpAccChangePassDTO</SftpAccChangePassDTO>
+								<EmailAccountDTO>cz.hostingcentrum.DTO.EmailAccountDTO</EmailAccountDTO>
+								<EmailDomainDTO>cz.hostingcentrum.DTO.EmailDomainDTO</EmailDomainDTO>
+								<CreateEmailDomainDTO>cz.hostingcentrum.DTO.CreateEmailDomainDTO</CreateEmailDomainDTO>
+								<ChangeEmailPasswordDTO>cz.hostingcentrum.DTO.ChangeEmailPasswordDTO</ChangeEmailPasswordDTO>
+								<CreateDbDTO>cz.hostingcentrum.DTO.CreateDbDTO</CreateDbDTO>
+								<CustomerDatabaseDTO>cz.hostingcentrum.DTO.CustomerDatabaseDTO</CustomerDatabaseDTO>
+								<ChangePassDbDTO>cz.hostingcentrum.DTO.ChangePassDbDTO</ChangePassDbDTO>
+								<CreateProjectDTO>cz.hostingcentrum.DTO.CreateProjectDTO</CreateProjectDTO>
+								<ProjectDTO>cz.hostingcentrum.DTO.ProjectDTO</ProjectDTO>
+								<SubscriptionStatus>cz.hostingcentrum.Enum.SubscriptionStatus</SubscriptionStatus>
+							</schemaMappings>
+							<generateModelTests>false</generateModelTests>
+							<generateApiTests>false</generateApiTests>
+							<generateSupportingFiles>false</generateSupportingFiles>
+							<addCompileSourceRoot>true</addCompileSourceRoot>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</path>
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>1.5.5.Final</version>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

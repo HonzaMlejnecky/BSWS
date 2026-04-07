@@ -1,134 +1,46 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from 'react';
+import { emailApi } from '../api/generatedClient';
 
-const API_BASE_URL = "http://api.local/api/v1/email";
+export default function useEmailServers() {
+  const [emailServers, setEmailServers] = useState([]);
 
-export default function useEmailServers(userId) {
-    const [emailServers, setEmailServers] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
+  const reload = () => emailApi.getDomainsByUser()
+    .then((domains) => {
+      setEmailServers((domains || []).map((domain) => ({
+        id: String(domain.id),
+        domain: domain.domainName,
+        smtpHost: domain.smtpHost || domain.smtpServer || `mail.${domain.domainName}`,
+        imapHost: domain.imapHost || domain.imapServer || `mail.${domain.domainName}`,
+        mailboxes: (domain.accounts || []).map((mb) => ({ id: String(mb.id), address: mb.emailAddress, password: '' })),
+      })));
+    })
+    .catch(() => setEmailServers([]));
 
-    const fetchServers = useCallback(async () => {
-        if (!userId) return;
+  useEffect(() => { reload(); }, []);
 
-        setIsLoading(true);
-        try {
-            const response = await fetch(`${API_BASE_URL}/domain/user/${userId}`);
-            if (!response.ok) throw new Error("Chyba při načítání emailových serverů");
+  const createServer = async (newServer) => {
+    await emailApi.createDomain({ domainName: newServer.domain });
+    await reload();
+  };
 
-            const data = await response.json();
+  const deleteServer = async (id) => {
+    await emailApi.removeDomain(id);
+    await reload();
+  };
 
-            const formattedData = data.map(domain => ({
-                id: domain.id,
-                domain: domain.domainName,
-                isActive: domain.isActive,
-                mailboxes: (domain.accounts || []).map(acc => ({
-                    id: acc.id,
-                    address: acc.emailAddress,
-                    isActive: acc.isActive
-                }))
-            }));
+  const addMailbox = async (server, mailbox) => {
+    await emailApi.createAccount({ domainId: Number(server.id), emailAddress: mailbox.address, password: mailbox.password });
+    await reload();
+  };
 
-            setEmailServers(formattedData);
-        } catch (err) {
-            console.error(err);
-            setError(err.message);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [userId]);
+  const deleteMailbox = async (_serverId, mailboxId) => {
+    await emailApi.removeAccount(mailboxId);
+    await reload();
+  };
 
+  const changePassword = async (mailbox, _serverId, newPassword) => {
+    await emailApi.changePassword({ accountId: Number(mailbox.id), newPassword });
+  };
 
-    useEffect(() => {
-        fetchServers();
-    }, [fetchServers]);
-
-
-    const createServer = async (domainName) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/domain/create`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    domainName: domainName,
-                    userId: userId,
-                    isActive: true
-                })
-            });
-            if (response.ok) fetchServers();
-        } catch (err) {
-            console.error("Chyba při vytváření domény:", err);
-        }
-    };
-
-    const deleteServer = async (domainId) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/domain/${domainId}`, {
-                method: "DELETE"
-            });
-            if (response.ok) fetchServers();
-        } catch (err) {
-            console.error("Chyba při mazání domény:", err);
-        }
-    };
-
-    const addMailbox = async (domainId, emailAddress, password) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/account/create`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    domainId: domainId,
-                    emailAddress: emailAddress,
-                    password: password,
-                    isActive: true
-                })
-            });
-            if (response.ok) fetchServers();
-        } catch (err) {
-            console.error("Chyba při vytváření schránky:", err);
-        }
-    };
-
-    const deleteMailbox = async (mailboxId) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/account/${mailboxId}`, {
-                method: "DELETE"
-            });
-            if (response.ok) fetchServers();
-        } catch (err) {
-            console.error("Chyba při mazání schránky:", err);
-        }
-    };
-
-    const changePassword = async (accountId, newPassword) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/change-password`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    accountId: accountId,
-                    newPassword: newPassword
-                })
-            });
-
-            if (!response.ok) {
-                const errorMsg = await response.text();
-                throw new Error(errorMsg);
-            }
-        } catch (err) {
-            console.error("Chyba při změně hesla:", err);
-        }
-    };
-
-    return {
-        emailServers,
-        isLoading,
-        error,
-        createServer,
-        deleteServer,
-        addMailbox,
-        deleteMailbox,
-        changePassword,
-        refresh: fetchServers
-    };
+  return { emailServers, createServer, deleteServer, addMailbox, deleteMailbox, changePassword };
 }

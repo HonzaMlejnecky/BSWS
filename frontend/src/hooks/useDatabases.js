@@ -1,76 +1,74 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from 'react';
+import { databaseApi } from '../api/generatedClient';
 
-const API_BASE_URL = "http://api.local/api/v1/database";
+const MANAGED_DATABASE = {
+  type: 'MariaDB 11',
+  host: 'localhost',
+  port: '3307',
+  size: 'Dle limitu tarifu',
+};
 
-export default function useDatabases(userId) {
-    const [databases, setDatabases] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+function normalizeDb(db) {
+  return {
+    id: db.id,
+    name: db.dbName,
+    username: db.dbUser,
+    ...MANAGED_DATABASE,
+  };
+}
 
-    const fetchDatabases = useCallback(async () => {
-        if (!userId) return;
+export default function useDatabases() {
+  const [databases, setDatabases] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-        setIsLoading(true);
-        try {
-            const response = await fetch(`${API_BASE_URL}/user/${userId}`);
-            if (!response.ok) throw new Error("Chyba při načítání databází");
+  const reload = useCallback(async () => {
+    const list = await databaseApi.getMine();
+    return (list || []).map(normalizeDb);
+  }, []);
 
-            const data = await response.json();
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const next = await reload();
+      setDatabases(next);
+    } catch (err) {
+      setError(err.message || 'Nepodařilo se načíst databáze.');
+      setDatabases([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [reload]);
 
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-            const formattedData = data.map(db => ({
-                id: db.id,
-                name: db.dbName || db.name,
-                username: db.dbUsername || db.dbName || db.name,
-                host: "127.0.0.1",
-                port: "3307",
-                type: "MariaDB"
-            }));
+  const addDatabase = async (db) => {
+    setError('');
+    await databaseApi.create({ dbName: db.name, username: db.username, password: db.password });
+    await refresh();
+  };
 
-            setDatabases(formattedData);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [userId]);
+  const deleteDatabase = async (id) => {
+    setError('');
+    await databaseApi.remove(id);
+    await refresh();
+  };
 
-    useEffect(() => {
-        fetchDatabases();
-    }, [fetchDatabases]);
+  const updatePassword = async (databaseId, newPassword) => {
+    setError('');
+    await databaseApi.updatePassword(databaseId, newPassword);
+  };
 
-    const createDatabase = async (dbName, password) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/create`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    userId: userId,
-                    dbName: dbName,
-                    password: password
-                })
-            });
-            if (response.ok) fetchDatabases();
-        } catch (err) {
-            console.error("Chyba při vytváření databáze:", err);
-        }
-    };
-
-    const deleteDatabase = async (dbId) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/${dbId}`, {
-                method: "DELETE"
-            });
-            if (response.ok) fetchDatabases();
-        } catch (err) {
-            console.error("Chyba při mazání databáze:", err);
-        }
-    };
-
-    return {
-        databases,
-        isLoading,
-        createDatabase,
-        deleteDatabase,
-        refresh: fetchDatabases
-    };
+  return {
+    databases,
+    loading,
+    error,
+    addDatabase,
+    deleteDatabase,
+    updatePassword,
+    reload: refresh,
+  };
 }

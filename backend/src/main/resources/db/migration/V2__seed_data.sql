@@ -14,9 +14,9 @@ INSERT INTO users (email, password, username, first_name, last_name, role, is_ac
 
 -- HOSTING PLANS
 INSERT INTO plans (code, name, description, disk_space_mb, max_projects, max_databases, max_ftp_accounts, max_email_accounts, price_monthly, display_order, is_active) VALUES
-('basic', 'Basic', 'Basic hosting for small websites and business cards.', 500, 1, 1, 1, 5, 49.00, 1, TRUE),
-('premium', 'Premium', 'Extended hosting for company websites and blogs.', 2000, 3, 3, 3, 20, 149.00, 2, TRUE),
-('business', 'Business', 'Professional hosting for e-shops and demanding applications.', 10000, 10, 10, 10, 100, 3490.00, 3, TRUE);
+('basic', 'Basic', 'Starter hosting for one web project with FTP access and standard publication workflow.', 1024, 1, 1, 1, 5, 79.00, 1, TRUE),
+('standard', 'Standard', 'Balanced hosting for company websites with FTP and in-app file upload.', 2048, 3, 3, 3, 20, 149.00, 2, TRUE),
+('premium', 'Premium', 'High-capacity hosting for advanced websites with priority provisioning options.', 10240, 10, 10, 10, 100, 349.00, 3, TRUE);
 
 -- SUBSCRIPTIONS
 INSERT INTO subscriptions (user_id, plan_id, order_number, status, started_at, expires_at, price_paid, created_at, updated_at) VALUES

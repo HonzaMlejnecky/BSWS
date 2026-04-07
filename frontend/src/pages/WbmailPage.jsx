@@ -12,7 +12,7 @@ export default function WebmailPage() {
         <div className="max-w-7xl mx-auto p-6">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
-                    <Link title="Back" to="/dashboard/emails" className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">←</Link>
+                    <Link title="Back" to="/emails" className="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">←</Link>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Webmail</h1>
                         <p className="text-sm text-gray-500 font-medium">admin@hostpanel.dev</p>

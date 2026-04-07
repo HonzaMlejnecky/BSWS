@@ -6,8 +6,8 @@ import { EmailCreateModal, EmailMailboxModal, EmailChangePasswordModal } from ".
 import useEmailServers from "../hooks/useEmailServers";
 
 export default function EmailPage() {
-    const currentUserId = 1;
-    const { emailServers, createServer, deleteServer, addMailbox, deleteMailbox, changePassword } = useEmailServers(currentUserId);
+
+    const { emailServers, createServer, deleteServer, addMailbox, deleteMailbox, changePassword } = useEmailServers();
 
     const [showCreate, setShowCreate] = useState(false);
     const [selectedServer, setSelectedServer] = useState(null);
@@ -15,19 +15,19 @@ export default function EmailPage() {
 
     return (
         <div className="max-w-6xl mx-auto p-8">
-
-            <PageHeader
-                title="Email Servers"
-                description="Manage your email infrastructure"
-                buttonText="New Server"
-                onAction={() => setShowCreate(true)}
+            
+            <PageHeader 
+                title="E-mailové servery" 
+                description="Správa vaší e-mailové infrastruktury" 
+                buttonText="Nový server" 
+                onAction={() => setShowCreate(true)} 
             />
 
             {emailServers.length === 0 ? (
-                <EmptyState
-                    title="No email servers yet"
-                    buttonText="Create Server"
-                    onAction={() => setShowCreate(true)}
+                <EmptyState 
+                    title="Zatím nemáte žádný e-mailový server" 
+                    buttonText="Vytvořit server" 
+                    onAction={() => setShowCreate(true)} 
                 />
             ) : (
                 <div className="grid md:grid-cols-2 gap-6">
@@ -37,40 +37,31 @@ export default function EmailPage() {
                             server={server}
                             onDeleteServer={deleteServer}
                             onAddMailbox={setSelectedServer}
-                            onDeleteMailbox={(serverId, mailboxId) => deleteMailbox(mailboxId)}
+                            onDeleteMailbox={deleteMailbox}
                             onChangePassword={(mb, sid) => setPasswordTarget({ mb, sid })}
                         />
                     ))}
                 </div>
             )}
-
+            
             <EmailCreateModal
                 open={showCreate}
                 onClose={() => setShowCreate(false)}
-                onCreate={(domainName) => {
-                    createServer(domainName);
-                    setShowCreate(false);
-                }}
+                onCreate={createServer}
             />
 
             <EmailMailboxModal
                 open={!!selectedServer}
                 server={selectedServer}
                 onClose={() => setSelectedServer(null)}
-                onAdd={(mb) => {
-                    addMailbox(selectedServer.id, mb.address, mb.password);
-                    setSelectedServer(null);
-                }}
+                onAdd={(mb) => { addMailbox(selectedServer, mb); setSelectedServer(null); }}
             />
 
             <EmailChangePasswordModal
                 open={!!passwordTarget}
                 mailbox={passwordTarget?.mb}
                 onClose={() => setPasswordTarget(null)}
-                onChange={(newPass) => {
-                    changePassword(passwordTarget.mb.id, newPass);
-                    setPasswordTarget(null);
-                }}
+                onChange={(newPass) => { changePassword(passwordTarget.mb, passwordTarget.sid, newPass); setPasswordTarget(null); }}
             />
 
         </div>

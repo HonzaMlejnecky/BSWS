@@ -1,26 +1,43 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function ProjectCard({ project, onDelete, onRedeploy }) {
     const [showLogs, setShowLogs] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
 
     const statusStyles = {
-        Running: "bg-green-100 text-green-700",
-        Deploying: "bg-yellow-100 text-yellow-700 animate-pulse",
-        Error: "bg-red-100 text-red-700",
+        published: "bg-green-100 text-green-700",
+        draft: "bg-yellow-100 text-yellow-700",
+        failed: "bg-red-100 text-red-700",
     };
 
+    const statusLabel = {
+        published: "Published",
+        draft: "Draft",
+        failed: "Failed",
+    };
+
+    const publicationStatus = project.publicationStatus || 'draft';
+
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="font-bold text-lg">{project.name}</h3>
                     <a href={project.url} target="_blank" rel="noreferrer" className="text-sm text-blue-500 hover:underline">{project.url}</a>
+                    <p className="text-xs text-gray-500 mt-2">Cílová doména: <span className="font-mono">{project.domain}</span></p>
+                    <p className="text-xs text-gray-500">Upload path: <span className="font-mono">{project.uploadPath}</span></p>
                 </div>
-                <span className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full ${statusStyles[project.status]}`}>
-                    {project.status}
+                <span className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full ${statusStyles[publicationStatus] || statusStyles.draft}`}>
+                    {statusLabel[publicationStatus] || statusLabel.draft}
                 </span>
             </div>
+
+            {project.publicationError && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+                    <span className="font-semibold">Provisioning error:</span> {project.publicationError}
+                </div>
+            )}
 
             {project.gitUrl && (
                 <div className="text-xs text-gray-400 font-mono bg-gray-50 p-2 rounded-lg mb-4 truncate">
@@ -29,6 +46,12 @@ export default function ProjectCard({ project, onDelete, onRedeploy }) {
             )}
 
             <div className="flex gap-2">
+                <Link
+                    to={`/projects/${project.id}`}
+                    className="flex-1 py-2 bg-blue-50 text-[#004CAF] rounded-xl text-xs font-semibold text-center hover:bg-blue-100 transition-colors cursor-pointer"
+                >
+                    Detail
+                </Link>
                 <button onClick={() => onRedeploy(project.id)} className="flex-1 py-2 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-black transition-colors">Redeploy</button>
                 <button onClick={() => setShowLogs(!showLogs)} className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-xl text-xs font-semibold hover:bg-gray-200 transition-colors">Logs</button>
                 {!confirmDelete ? (

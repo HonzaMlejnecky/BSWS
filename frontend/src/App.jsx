@@ -1,60 +1,41 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import ProtectedRoute from './components/routing/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
+import LandingPage from './pages/LandingPage';
+import RegisterPage from './pages/RegisterPage';
+import PlanSelectionPage from './pages/PlanSelectionPage';
+import DashboardPage from './pages/DashboardPage';
+import CreateProjectPage from './pages/CreateProjectPage';
+import ProjectDetailPage from './pages/ProjectDetailPage';
+import DatabasePage from './pages/DatabasePage';
+import ProjectsPage from './pages/ProjectPage';
+import EmailPage from './pages/EmailPage';
+import FTPPage from './pages/FTPPage';
+import WbmailPage from './pages/WbmailPage';
+import SubscriptionPage from './SubscrioptionPage';
 import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Services from './components/Services';
-import Features from './components/Features';
 import Footer from './components/Footer';
-import AuthModal from './components/AuthModal';
-import DashboardPage from "./pages/Dashboard.jsx";
-import ProjectsPage from "./pages/ProjectPage.jsx";
-import DatabasesPage from "./pages/DatabasePage.jsx";
-import WebmailPage from "./pages/WbmailPage.jsx";
-import EmailPage from "./pages/EmailPage.jsx";
-import FTPPage from "./pages/FTPPage.jsx";
-import SubscriptionPage from "./SubscrioptionPage.jsx";
-
-const Home = ({ onOpenModal }) => (
-  <>
-    <Hero onOpenModal={onOpenModal} /> 
-    <Services />
-    <Features />
-  </>
-);
 
 function App() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState(true);
-
-  const openModal = (mode) => {
-    setModalMode(mode);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => setIsModalOpen(false);
-
   return (
     <Router>
-      <AuthModal 
-        isOpen={isModalOpen} 
-        onClose={closeModal} 
-        initialLoginMode={modalMode} 
-      />
-
-      <div className={`min-h-screen bg-white flex flex-col`}>
-        
-        <Navbar onOpenModal={() => openModal(true)} />
-        
+      <div className="min-h-screen bg-white flex flex-col">
+        <Navbar />
         <main className="flex-grow">
           <Routes>
-            <Route path="/" element={<Home onOpenModal={openModal} />} />
-            <Route path="/subscription" element={<SubscriptionPage/>}/>
-            <Route path="/dashboard" element={<DashboardPage/>}/>
-            <Route path="/projects" element={<ProjectsPage/>}/>
-            <Route path="/databases" element={<DatabasesPage/>}/>
-            {/*<Route path="/webmail" element={<WebmailPage/>}/>*/}
-            <Route path="/dashboard/emails" element={<EmailPage/>}/>
-            <Route path="/ftp" element={<FTPPage/>}/>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/plan" element={<ProtectedRoute><PlanSelectionPage /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+            <Route path="/projects/new" element={<ProtectedRoute><CreateProjectPage /></ProtectedRoute>} />
+            <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectDetailPage /></ProtectedRoute>} />
+            <Route path="/databases" element={<ProtectedRoute><DatabasePage /></ProtectedRoute>} />
+            <Route path="/emails" element={<ProtectedRoute><EmailPage /></ProtectedRoute>} />
+            <Route path="/ftp" element={<ProtectedRoute><FTPPage /></ProtectedRoute>} />
+            <Route path="/dashboard/webmail" element={<ProtectedRoute><WbmailPage /></ProtectedRoute>} />
+            <Route path="/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
           </Routes>
         </main>
         <Footer />

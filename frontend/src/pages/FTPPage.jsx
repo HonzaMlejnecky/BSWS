@@ -15,16 +15,16 @@ export default function FTPPage() {
     return (
         <div className="max-w-6xl mx-auto p-8">
             <PageHeader 
-                title="FTP Servers" 
-                description="Manage your FTP access credentials" 
-                buttonText="New FTP Server" 
+                title="FTP servery" 
+                description="Správa přístupových údajů pro FTP" 
+                buttonText="Nový FTP server" 
                 onAction={() => setShowCreate(true)} 
             />
 
             {ftpServers.length === 0 ? (
                 <EmptyState 
-                    title="No FTP servers yet" 
-                    buttonText="Create FTP Server" 
+                    title="Zatím nemáte žádný FTP server" 
+                    buttonText="Vytvořit FTP server" 
                     onAction={() => setShowCreate(true)} 
                 />
             ) : (
