@@ -71,7 +71,7 @@ const Footer = () => {
             <h4 className="font-bold text-lg mb-6">Společnost</h4>
             <ul className="space-y-4 text-sm text-blue-100">
               <li><a href="#" className="hover:text-white transition">O nás</a></li>
-              <li><a href="#" className="hover:text-white transition">Kariéra</a> <span className="text-xs bg-blue-500 px-2 py-0.5 rounded text-white ml-2">Hiring</span></li>
+              <li><a href="#" className="hover:text-white transition">Kariéra</a> <span className="text-xs bg-blue-500 px-2 py-0.5 rounded text-white ml-2">Nabíráme</span></li>
               <li><a href="#" className="hover:text-white transition">Blog</a></li>
               <li><a href="#" className="hover:text-white transition">Kontakt</a></li>
               <li><a href="#" className="hover:text-white transition">Partneři</a></li>
@@ -82,7 +82,7 @@ const Footer = () => {
             <h4 className="font-bold text-lg mb-6">Podpora</h4>
             <ul className="space-y-4 text-sm text-blue-100">
               <li><a href="#" className="hover:text-white transition">Centrum nápovědy</a></li>
-              <li><a href="#" className="hover:text-white transition">Stav služeb (Status)</a></li>
+              <li><a href="#" className="hover:text-white transition">Stav služeb</a></li>
               <li><a href="#" className="hover:text-white transition">Nahlásit zneužití</a></li>
               <li><a href="#" className="hover:text-white transition">Obchodní podmínky</a></li>
               <li><a href="#" className="hover:text-white transition">Ochrana soukromí</a></li>
@@ -93,8 +93,8 @@ const Footer = () => {
         <div className="border-t border-blue-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-blue-200">
           <p>&copy; 2026 Mage Hosting. Všechna práva vyhrazena.</p>
           <div className="flex gap-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-white">Privacy Policy</a>
-            <a href="#" className="hover:text-white">Terms of Service</a>
+            <a href="#" className="hover:text-white">Zásady ochrany osobních údajů</a>
+            <a href="#" className="hover:text-white">Podmínky služby</a>
           </div>
         </div>
         

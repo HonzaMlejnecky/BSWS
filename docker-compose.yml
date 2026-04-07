@@ -110,8 +110,8 @@
         # Paths
         CUSTOMERS_PATH: /srv/customers
         APP_APACHE_VHOSTS_DIR: /srv/apache/vhosts.d
-        APP_APACHE_VALIDATE_COMMAND: true
-        APP_APACHE_RELOAD_COMMAND: true
+        APP_APACHE_VALIDATE_COMMAND: "true"
+        APP_APACHE_RELOAD_COMMAND: "curl -sf --unix-socket /var/run/docker.sock -X POST 'http://localhost/containers/hc-web/kill?signal=USR1'"
       user: "0:0"
       volumes:
         # Customer folders - backend creates them when hosting is activated
@@ -120,6 +120,8 @@
         - ./backend/src:/app/src
         - ./backend/pom.xml:/app/pom.xml
         - sftpgodata:/srv/sftpgo/data
+        # Docker socket - allows backend to signal Apache reload
+        - /var/run/docker.sock:/var/run/docker.sock
       ports:
         - "${BACKEND_PORT:-8083}:8080"
       networks:

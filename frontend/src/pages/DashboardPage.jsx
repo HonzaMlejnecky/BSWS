@@ -16,7 +16,7 @@ export default function DashboardPage() {
         const subscriptions = await subscriptionsApi.getMine();
         const active = (subscriptions || []).some((s) => s.status?.toLowerCase() === 'active');
         if (!active) {
-          navigate('/plan', { replace: true });
+          navigate('/subscription', { replace: true });
           return;
         }
 

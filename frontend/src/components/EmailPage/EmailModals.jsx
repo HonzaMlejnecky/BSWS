@@ -8,8 +8,8 @@ function BaseModal({ open, title, subtitle, children }) {
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
                 <h2 className="font-bold text-lg mb-1">{title}</h2>
                 {subtitle && <p className="text-sm text-gray-500 mb-4">{subtitle}</p>}
-                {!subtitle && <div className="mb-4" />}
-
+                {!subtitle && <div className="mb-4" />} 
+                
                 {children}
             </div>
         </div>
@@ -28,6 +28,7 @@ function ModalInput({ value, onChange, placeholder, type = "text" }) {
     );
 }
 
+
 export function EmailCreateModal({ open, onClose, onCreate }) {
     const [domain, setDomain] = useState("");
 
@@ -35,12 +36,11 @@ export function EmailCreateModal({ open, onClose, onCreate }) {
         if (!domain) return;
 
         if (!domain.includes(".") || domain.includes(" ")) {
-            alert("Zadej platnou doménu, např. moje-domena.cz");
+            alert("Enter a valid domain, e.g. example.com");
             return;
         }
 
-
-        onCreate(domain);
+        onCreate({ domain });
         setDomain("");
         onClose();
     }
@@ -48,13 +48,13 @@ export function EmailCreateModal({ open, onClose, onCreate }) {
     return (
         <BaseModal open={open} onClose={onClose} title="Create Email Server">
             <div className="flex flex-col gap-3 mb-4">
-                <ModalInput
-                    value={domain}
-                    onChange={(e) => setDomain(e.target.value)}
-                    placeholder="example.com (Domain)"
+                <ModalInput 
+                    value={domain} 
+                    onChange={(e) => setDomain(e.target.value)} 
+                    placeholder="example.com (Domain)" 
                 />
             </div>
-
+            
             <div className="flex justify-end gap-3">
                 <button onClick={onClose} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">Cancel</button>
                 <button onClick={handleCreate} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors">Create</button>
@@ -68,18 +68,17 @@ export function EmailMailboxModal({ server, open, onClose, onAdd }) {
     const [password, setPassword] = useState("");
 
     function handleAdd() {
-        if (!mailboxName || !password) return;
+        if (!mailboxName || !password || !server?.domain) return;
 
-        // Posíláme objekt s adresou a novým heslem
         onAdd({
             address: `${mailboxName}@${server.domain}`,
-            password: password
+            password,
         });
-
         setMailboxName("");
         setPassword("");
         onClose();
     }
+
 
     const title = server ? `Add mailbox to ${server.domain}` : "Add mailbox";
 
@@ -106,7 +105,6 @@ export function EmailMailboxModal({ server, open, onClose, onAdd }) {
                     className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </div>
-
             <div className="flex justify-end gap-3">
                 <button onClick={onClose} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">Cancel</button>
                 <button onClick={handleAdd} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors">Add</button>
@@ -126,10 +124,10 @@ export function EmailChangePasswordModal({ mailbox, open, onClose, onChange }) {
     }
 
     return (
-        <BaseModal
-            open={open}
-            onClose={onClose}
-            title="Change password"
+        <BaseModal 
+            open={open} 
+            onClose={onClose} 
+            title="Change password" 
             subtitle={`For: ${mailbox?.address}`}
         >
             <input

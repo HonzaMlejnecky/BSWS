@@ -8,19 +8,19 @@ function PlanCard({ plan, currentPlan, onSelect, loading }) {
       <h3 className="text-lg font-semibold mb-2">{plan.name}</h3>
       <p className="text-3xl font-bold mb-4">
         ${plan.priceMonthly}
-        <span className="text-sm text-gray-500"> / month</span>
+        <span className="text-sm text-gray-500"> / měsíc</span>
       </p>
       <ul className="text-sm text-gray-600 space-y-1 mb-6">
-        <li>Databases: {plan.maxDatabases}</li>
-        <li>Email Accounts: {plan.maxEmailAccounts}</li>
-        <li>SFTP Accounts: {plan.maxFtpAccounts}</li>
+        <li>Databáze: {plan.maxDatabases}</li>
+        <li>E-mailové účty: {plan.maxEmailAccounts}</li>
+        <li>SFTP účty: {plan.maxFtpAccounts}</li>
       </ul>
       <button
         disabled={isActive || loading}
         onClick={() => onSelect(plan.id)}
         className={`w-full py-2 rounded-xl ${isActive ? 'bg-gray-200 cursor-not-allowed' : 'bg-blue-600 text-white'}`}
       >
-        {isActive ? 'Current Plan' : loading ? 'Processing...' : 'Select Plan'}
+        {isActive ? 'Aktuální tarif' : loading ? 'Zpracovává se...' : 'Vybrat tarif'}
       </button>
     </div>
   );
@@ -32,24 +32,24 @@ export default function SubscriptionPage() {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Subscription</h1>
-        <p className="text-gray-500 mt-2">Manage your current plan and billing.</p>
+        <h1 className="text-3xl font-bold">Předplatné</h1>
+        <p className="text-gray-500 mt-2">Správa aktuálního tarifu a fakturace.</p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-md p-6 mb-10">
-        <h2 className="text-lg font-semibold mb-4">Current Plan</h2>
+        <h2 className="text-lg font-semibold mb-4">Aktuální tarif</h2>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <p className="text-xl font-bold">{currentPlan?.name || 'No plan selected'}</p>
+            <p className="text-xl font-bold">{currentPlan?.name || 'Není vybrán žádný tarif'}</p>
             <p className="text-sm text-gray-500">
-              Valid until: {currentSubscription?.expiresAt ? new Date(currentSubscription.expiresAt).toLocaleDateString() : '-'}
+              Platný do: {currentSubscription?.expiresAt ? new Date(currentSubscription.expiresAt).toLocaleDateString() : '-'}
             </p>
           </div>
           {currentPlan && (
             <div className="text-sm text-gray-600 space-y-1">
-              <p>Databases: {currentPlan.maxDatabases}</p>
-              <p>Email Accounts: {currentPlan.maxEmailAccounts}</p>
-              <p>SFTP Accounts: {currentPlan.maxFtpAccounts}</p>
+              <p>Databáze: {currentPlan.maxDatabases}</p>
+              <p>E-mailové účty: {currentPlan.maxEmailAccounts}</p>
+              <p>SFTP účty: {currentPlan.maxFtpAccounts}</p>
             </div>
           )}
         </div>

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function ProjectCard({ project, onDelete, onRedeploy }) {
     const [showLogs, setShowLogs] = useState(false);
@@ -19,7 +20,7 @@ export default function ProjectCard({ project, onDelete, onRedeploy }) {
     const publicationStatus = project.publicationStatus || 'draft';
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="font-bold text-lg">{project.name}</h3>
@@ -45,6 +46,12 @@ export default function ProjectCard({ project, onDelete, onRedeploy }) {
             )}
 
             <div className="flex gap-2">
+                <Link
+                    to={`/projects/${project.id}`}
+                    className="flex-1 py-2 bg-blue-50 text-[#004CAF] rounded-xl text-xs font-semibold text-center hover:bg-blue-100 transition-colors cursor-pointer"
+                >
+                    Detail
+                </Link>
                 <button onClick={() => onRedeploy(project.id)} className="flex-1 py-2 bg-gray-900 text-white rounded-xl text-xs font-semibold hover:bg-black transition-colors">Redeploy</button>
                 <button onClick={() => setShowLogs(!showLogs)} className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-xl text-xs font-semibold hover:bg-gray-200 transition-colors">Logs</button>
                 {!confirmDelete ? (

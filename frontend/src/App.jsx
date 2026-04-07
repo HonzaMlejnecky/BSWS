@@ -8,6 +8,11 @@ import DashboardPage from './pages/DashboardPage';
 import CreateProjectPage from './pages/CreateProjectPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import DatabasePage from './pages/DatabasePage';
+import ProjectsPage from './pages/ProjectPage';
+import EmailPage from './pages/EmailPage';
+import FTPPage from './pages/FTPPage';
+import WbmailPage from './pages/WbmailPage';
+import SubscriptionPage from './SubscrioptionPage';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
@@ -23,9 +28,14 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/plan" element={<ProtectedRoute><PlanSelectionPage /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
             <Route path="/projects/new" element={<ProtectedRoute><CreateProjectPage /></ProtectedRoute>} />
             <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectDetailPage /></ProtectedRoute>} />
             <Route path="/databases" element={<ProtectedRoute><DatabasePage /></ProtectedRoute>} />
+            <Route path="/emails" element={<ProtectedRoute><EmailPage /></ProtectedRoute>} />
+            <Route path="/ftp" element={<ProtectedRoute><FTPPage /></ProtectedRoute>} />
+            <Route path="/dashboard/webmail" element={<ProtectedRoute><WbmailPage /></ProtectedRoute>} />
+            <Route path="/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
           </Routes>
         </main>
         <Footer />

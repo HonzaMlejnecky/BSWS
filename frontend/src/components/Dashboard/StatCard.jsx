@@ -4,7 +4,7 @@ export default function StatCard({ label, value, icon, href, color }) {
     return (
         <Link
             to={href}
-            className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-all duration-200 group"
+            className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer"
         >
             <div className="flex items-center justify-between">
                 <div>

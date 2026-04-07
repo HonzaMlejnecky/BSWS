@@ -18,7 +18,7 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-      <PageHeader title="Welcome back!" description="Here's an overview of your hosting resources." />
+      <PageHeader title="Vítejte zpět!" description="Přehled vašich hostingových prostředků na jednom místě." />
       <StatsGrid
         projectsCount={projects.length}
         dbCount={databases.length}

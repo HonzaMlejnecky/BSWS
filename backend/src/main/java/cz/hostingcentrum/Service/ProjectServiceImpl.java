@@ -224,6 +224,7 @@ public class ProjectServiceImpl implements ProjectService {
         String safeDocumentRoot = getProjectWebRootPath(project).toString();
         String content = "<VirtualHost *:80>\n"
                 + "    ServerName " + project.getDomain() + "\n"
+                + "    ServerAlias www." + project.getDomain() + "\n"
                 + "    DocumentRoot \"" + safeDocumentRoot + "\"\n\n"
                 + "    <Directory \"" + safeDocumentRoot + "\">\n"
                 + "        Options Indexes FollowSymLinks\n"

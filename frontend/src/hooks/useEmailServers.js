@@ -9,8 +9,8 @@ export default function useEmailServers() {
       setEmailServers((domains || []).map((domain) => ({
         id: String(domain.id),
         domain: domain.domainName,
-        smtpHost: `smtp.${domain.domainName}`,
-        imapHost: `imap.${domain.domainName}`,
+        smtpHost: domain.smtpHost || domain.smtpServer || `mail.${domain.domainName}`,
+        imapHost: domain.imapHost || domain.imapServer || `mail.${domain.domainName}`,
         mailboxes: (domain.accounts || []).map((mb) => ({ id: String(mb.id), address: mb.emailAddress, password: '' })),
       })));
     })

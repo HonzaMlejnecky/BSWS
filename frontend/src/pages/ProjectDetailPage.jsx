@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { projectsApi } from '../api/generatedClient';
 import PageHeader from '../components/UI/PageHeader';
-import MailServerSetupCard from '../components/ProjectDetail/MailServerSetupCard';
 
 function formatSize(value) {
   if (value == null || value < 0) return 'neznámá velikost';
@@ -13,6 +12,7 @@ function formatSize(value) {
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
+  const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [files, setFiles] = useState([]);
   const [uploadFile, setUploadFile] = useState(null);
@@ -133,19 +133,41 @@ export default function ProjectDetailPage() {
         )}
       </div>
 
-
-      <MailServerSetupCard domain={project.domain} />
-
       <div className="bg-[#F5F9FF] rounded-2xl border border-blue-100 p-6">
         <h2 className="text-xl font-semibold mb-3 text-[#004CAF]">Jak otestovat web</h2>
         <ol className="text-sm list-decimal pl-5 space-y-2">
-          <li>Přidejte <code>{project.domain}</code> do <code>/etc/hosts</code> (na IP virtuálního serveru).</li>
           <li>Nahrajte vlastní <code>index.html</code> přes FTP nebo přes upload v této stránce.</li>
-          <li>Otevřete doménu v prohlížeči a ověřte, že je zobrazen váš obsah.</li>
+          {project.domain?.endsWith('.localhost') ? (
+            <li>Domény <code>*.localhost</code> se automaticky resolvují na <code>127.0.0.1</code> — stačí otevřít odkaz níže.</li>
+          ) : (
+            <li>Přidejte <code>{project.domain}</code> do <code>C:\Windows\System32\drivers\etc\hosts</code> (řádek: <code>127.0.0.1 {project.domain}</code>).</li>
+          )}
+          <li>
+            Otevřete web v prohlížeči:{' '}
+            <a
+              href={`http://${project.domain}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#004CAF] font-semibold underline"
+            >
+              http://{project.domain}
+            </a>
+          </li>
         </ol>
       </div>
 
-      <Link to="/dashboard" className="inline-block text-[#004CAF] font-medium">← Zpět na dashboard</Link>
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center text-[#004CAF] font-medium hover:underline cursor-pointer"
+        >
+          ← Zpět
+        </button>
+        <Link to="/projects" className="inline-flex items-center text-[#004CAF] font-medium hover:underline">
+          Na seznam projektů
+        </Link>
+      </div>
     </div>
   );
 }

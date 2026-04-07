@@ -9,7 +9,7 @@ function Row({ label, value, copyValue }) {
       await navigator.clipboard.writeText(copyValue);
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
-    } catch (_) {
+    } catch {
       setCopied(false);
     }
   };

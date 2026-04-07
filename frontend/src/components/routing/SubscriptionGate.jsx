@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { ordersApi } from '../../api/generatedClient';
+import { subscriptionsApi } from '../../api/generatedClient';
 
 function isSubscriptionActive(subscription) {
   if (!subscription) return false;
@@ -19,7 +19,7 @@ export default function SubscriptionGate({ children }) {
 
     const loadSubscriptions = async () => {
       try {
-        const data = await ordersApi.getMine();
+        const data = await subscriptionsApi.getMine();
         if (alive) {
           setSubscriptions(data || []);
         }

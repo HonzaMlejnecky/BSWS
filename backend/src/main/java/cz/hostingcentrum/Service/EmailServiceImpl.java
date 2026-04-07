@@ -83,8 +83,8 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public CreateEmailDomainDTO createDomain(CreateEmailDomainDTO dto) {
         String domainName = dto.getDomainName().toLowerCase();
-        if (!domainName.endsWith(".com") && !domainName.endsWith(".cz")) {
-            throw new IllegalArgumentException("Doména musí končit na .com nebo .cz");
+        if (!isValidCustomDomain(domainName)) {
+            throw new IllegalArgumentException("Neplatný formát domény");
         }
 
         User user = getCurrentUser();
@@ -100,6 +100,13 @@ public class EmailServiceImpl implements EmailService {
         """, saved.getDomainName());
 
         return emailMapper.toCreateDomainDto(saved);
+    }
+
+    private boolean isValidCustomDomain(String domainName) {
+        if (domainName == null || domainName.isBlank() || domainName.length() > 253) {
+            return false;
+        }
+        return domainName.matches("^(?=.{1,253}$)(?!-)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$");
     }
 
     @Override

@@ -18,6 +18,12 @@ export const subscriptionsApi = {
   selectPlan: (planId) => apiClient.post(`/api/v1/orders?plan=${planId}`),
 };
 
+// Alias used by useSubscriptions hook and SubscriptionGate
+export const ordersApi = {
+  getMine: () => apiClient.get('/api/v1/orders/me'),
+  create: (planId) => apiClient.post(`/api/v1/orders?plan=${planId}`),
+};
+
 export const projectsApi = {
   getMine: () => apiClient.get('/api/v1/projects/me'),
   getById: (id) => apiClient.get(`/api/v1/projects/${id}`),
@@ -37,3 +43,21 @@ export const databaseApi = {
   remove: (databaseId) => apiClient.delete(`/api/v1/databases/${databaseId}`),
   updatePassword: (databaseId, newPassword) => apiClient.post('/api/v1/databases/password', { databaseId, newPassword }),
 };
+
+export const emailApi = {
+  getDomainsByUser: () => apiClient.get('/api/v1/email/domains/me'),
+  createDomain: (payload) => apiClient.post('/api/v1/email/domains', payload),
+  removeDomain: (id) => apiClient.delete(`/api/v1/email/domains/${id}`),
+  createAccount: (payload) => apiClient.post('/api/v1/email/accounts', payload),
+  getAccountsByDomain: (domainId) => apiClient.get(`/api/v1/email/accounts/domain/${domainId}`),
+  removeAccount: (id) => apiClient.delete(`/api/v1/email/accounts/${id}`),
+  changePassword: (payload) => apiClient.post('/api/v1/email/accounts/password', payload),
+};
+
+export const sftpApi = {
+  getMine: () => apiClient.get('/api/v1/sftp/accounts/me'),
+  create: (payload) => apiClient.post('/api/v1/sftp/accounts', payload),
+  remove: (id) => apiClient.delete(`/api/v1/sftp/accounts/${id}`),
+  changePassword: (payload) => apiClient.post('/api/v1/sftp/accounts/password', payload),
+};
+
