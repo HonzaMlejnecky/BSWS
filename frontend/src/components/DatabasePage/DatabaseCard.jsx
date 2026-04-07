@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-
 function CopyButton({ value }) {
     function copy() {
         navigator.clipboard.writeText(value);
@@ -64,11 +63,11 @@ export default function DatabaseCard({ db, onDelete }) {
 
     return (
         <div className="bg-white rounded-2xl shadow-md p-6">
-            
+
             <div className="flex justify-between items-center mb-4">
                 <div>
                     <h3 className="font-semibold text-lg">{db.name}</h3>
-                    <Badge>{db.type} · {db.size}</Badge>
+                    <Badge>{db.type}</Badge>
                 </div>
             </div>
 
@@ -86,15 +85,15 @@ export default function DatabaseCard({ db, onDelete }) {
                     Delete Database
                 </button>
             ) : (
-                <DeleteConfirmation 
+                <DeleteConfirmation
                     onConfirm={() => {
                         onDelete(db.id);
                         setConfirm(false);
-                    }} 
-                    onCancel={() => setConfirm(false)} 
+                    }}
+                    onCancel={() => setConfirm(false)}
                 />
             )}
-            
+
         </div>
     );
 }
