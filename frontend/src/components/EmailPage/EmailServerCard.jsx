@@ -38,17 +38,16 @@ function MailboxRow({ mailbox, onChangePassword, onDelete }) {
     );
 }
 
-
 export default function EmailServerCard({ server, onDeleteServer, onAddMailbox, onDeleteMailbox, onChangePassword }) {
     const [confirmDelete, setConfirmDelete] = useState(false);
 
     return (
         <div className="bg-white rounded-2xl shadow-md p-6">
-            
+
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="font-bold text-xl">{server.domain}</h3>
-                    <p className="text-sm text-gray-500 mt-1">{server.mailboxes.length} mailboxes active</p>
+                    <p className="text-sm text-gray-500 mt-1">{server.mailboxes?.length || 0} mailboxes active</p>
                 </div>
                 <div>
                     {!confirmDelete ? (
@@ -56,17 +55,17 @@ export default function EmailServerCard({ server, onDeleteServer, onAddMailbox, 
                             Delete Server
                         </button>
                     ) : (
-                        <InlineConfirmAction 
-                            onConfirm={() => onDeleteServer(server.id)} 
-                            onCancel={() => setConfirmDelete(false)} 
+                        <InlineConfirmAction
+                            onConfirm={() => onDeleteServer(server.id)}
+                            onCancel={() => setConfirmDelete(false)}
                         />
                     )}
                 </div>
             </div>
 
             <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-5 text-sm flex flex-col gap-2">
-                <DetailRow label="SMTP Host" value={server.smtpHost} />
-                <DetailRow label="IMAP Host" value={server.imapHost} />
+                <DetailRow label="SMTP Host" value={`mail.${server.domain}`} />
+                <DetailRow label="IMAP Host" value={`mail.${server.domain}`} />
             </div>
 
             <div>
@@ -77,13 +76,13 @@ export default function EmailServerCard({ server, onDeleteServer, onAddMailbox, 
                     </button>
                 </div>
 
-                {server.mailboxes.length === 0 ? (
+                {!server.mailboxes || server.mailboxes.length === 0 ? (
                     <p className="text-sm text-gray-400 text-center py-2 italic">No mailboxes created yet.</p>
                 ) : (
                     <div className="flex flex-col gap-2">
                         {server.mailboxes.map(mb => (
-                            <MailboxRow 
-                                key={mb.id} 
+                            <MailboxRow
+                                key={mb.id}
                                 mailbox={mb}
                                 onChangePassword={() => onChangePassword(mb, server.id)}
                                 onDelete={() => onDeleteMailbox(server.id, mb.id)}
