@@ -42,7 +42,7 @@ export default function DatabasesPage() {
       />
 
       <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-        Pro tuto verzi aplikace je podporována pouze <strong>MariaDB 11</strong>. Uživatel si může vytvořit vlastní databázi
+        Pro tuto verzi aplikace je podporována pouze <strong>MariaDB 11</strong>. Můžete vytvořit vlastní databázi
         hostovanou na naší infrastruktuře a spravovat její přístupové údaje.
       </div>
 
