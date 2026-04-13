@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const DEFAULT_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 function getAuthToken() {
   return localStorage.getItem('hc_jwt');
